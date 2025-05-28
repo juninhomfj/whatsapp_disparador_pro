@@ -2,6 +2,8 @@ const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const fs = require('fs');
+require('dotenv').config();                // <--- ADICIONADO AQUI
+const authRoutes = require('./routes/auth'); // <--- ADICIONADO AQUI
 
 const app = express();
 const port = 3000;
@@ -13,11 +15,11 @@ let whatsappClient = null;
 // Frontend
 app.use(express.static('../frontend'));
 app.use(express.json());
+app.use('/api', authRoutes); // <--- ADICIONADO AQUI
 
 // Rota do QR Code
 app.get('/qrcode', async (req, res) => {
   if (!whatsappClient) initWhatsApp();
-  
   try {
     const qr = await whatsappClient.getQrCode();
     const qrImage = await qrcode.toDataURL(qr);
@@ -42,7 +44,6 @@ function initWhatsApp() {
 // Disparo de mensagens
 app.post('/send', async (req, res) => {
   const { numbers, message } = req.body;
-  
   try {
     for (const number of numbers) {
       const chatId = number.replace('+', '') + '@c.us';
