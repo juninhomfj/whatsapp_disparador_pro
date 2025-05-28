@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Conectar WhatsApp</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <div class="container">
+    <h2>Conectar WhatsApp</h2>
+    <div id="qrCode"></div>
+    <p class="qr-instructions">
+      1. Abra o WhatsApp no celular<br>
+      2. Toque em ⋮ > Dispositivos conectados<br>
+      3. Escaneie o QR Code
+    </p>
+  </div>
+  <script>
+    async function updateQR() {
+      const response = await fetch('/qrcode');
+      if(response.status === 200) {
+        const qr = await response.text();
+        document.getElementById('qrCode').innerHTML = 
+          qr === 'waiting' ? 'Carregando...' : `<img src="${qr}">`;
+      }
+      setTimeout(updateQR, 5000);
+    }
+    updateQR();
+  </script>
+</body>
+</html>
