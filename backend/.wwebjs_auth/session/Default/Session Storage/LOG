@@ -1,3 +1,4 @@
-2025/05/29-00:27:38.706 71f4 Reusing MANIFEST C:\Users\DELL\whatsapp_disparador_pro\backend\.wwebjs_auth\session\Default\Session Storage/MANIFEST-000001
-2025/05/29-00:27:38.719 71f4 Recovering log #3
-2025/05/29-00:27:38.720 71f4 Reusing old log C:\Users\DELL\whatsapp_disparador_pro\backend\.wwebjs_auth\session\Default\Session Storage/000003.log 
+2025/05/29-00:53:21.423 10b8 Creating DB C:\Users\DELL\whatsapp_disparador_pro\backend\.wwebjs_auth\session\Default\Session Storage since it was missing.
+2025/05/29-00:53:21.431 10b8 Reusing MANIFEST C:\Users\DELL\whatsapp_disparador_pro\backend\.wwebjs_auth\session\Default\Session Storage/MANIFEST-000001
+2025/05/29-00:53:21.432 10b8 Recovering log #3
+2025/05/29-00:53:21.433 10b8 Reusing old log C:\Users\DELL\whatsapp_disparador_pro\backend\.wwebjs_auth\session\Default\Session Storage/000003.log 
