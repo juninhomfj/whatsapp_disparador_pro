@@ -28,7 +28,9 @@ app.use('/api', authRoutes);
 function initWhatsApp() {
   whatsappClient = new Client({
     authStrategy: new LocalAuth(),
-    puppeteer: {
+    app.get('/status', (req, res) => {
+      res.send(connectionStatus);
+    });    puppeteer: {
       headless: true,
       args: [
         '--no-sandbox',

@@ -26,6 +26,17 @@
       setTimeout(updateQR, 5000);
     }
     updateQR();
+
+    async function checkStatus() {
+      const response = await fetch('/status');
+      const status = await response.text();
+      if (status === 'connected') {
+        window.location.href = '/dashboard.html';
+      } else {
+        setTimeout(checkStatus, 2000);
+      }
+    }
+    checkStatus();
   </script>
 </body>
 </html>
