@@ -15,7 +15,9 @@ const userSchema = new mongoose.Schema({
                                                                     createdAt: {
                                                                             type: Date,
                                                                                     default: Date.now
-                                                                                        }
+                                                                                        },
+                                                                                        resetToken: String,
+                                                                                        resetTokenExpires: Date
                                                                                         });
 
                                                                                         // Middleware para hash da senha antes de salvar
