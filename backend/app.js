@@ -28,7 +28,14 @@ app.use('/api', authRoutes);
 function initWhatsApp() {
   whatsappClient = new Client({
     authStrategy: new LocalAuth(),
-    puppeteer: { headless: true }
+    puppeteer: {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage'
+      ]
+    }
   });
 
   whatsappClient.on('qr', (qr) => {
