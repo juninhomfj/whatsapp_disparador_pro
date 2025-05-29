@@ -1,9 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const fs = require('fs');
-require('dotenv').config();                // <--- ADICIONADO AQUI
-const authRoutes = require('./routes/auth'); // <--- ADICIONADO AQUI
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const port = 3000;
@@ -11,23 +11,18 @@ const port = 3000;
 // Configurações
 const config = require('./config.json');
 let whatsappClient = null;
+let lastQr = null; // Armazena o último QR recebido
+let connectionStatus = 'disconnected'; // disconnected | qr-pending | connected
+
+// Limpa QR após 2 minutos
+setInterval(() => {
+  if (lastQr) lastQr = null;
+}, 120000);
 
 // Frontend
 app.use(express.static('../frontend'));
 app.use(express.json());
-app.use('/api', authRoutes); // <--- ADICIONADO AQUI
-
-// Rota do QR Code
-app.get('/qrcode', async (req, res) => {
-  if (!whatsappClient) initWhatsApp();
-  try {
-    const qr = await whatsappClient.getQrCode();
-    const qrImage = await qrcode.toDataURL(qr);
-    res.send(qrImage);
-  } catch {
-    res.send('waiting');
-  }
-});
+app.use('/api', authRoutes);
 
 // Inicialização WhatsApp
 function initWhatsApp() {
@@ -36,10 +31,36 @@ function initWhatsApp() {
     puppeteer: { headless: true }
   });
 
-  whatsappClient.on('qr', () => console.log('QR Code gerado!'));
-  whatsappClient.on('ready', () => console.log('WhatsApp conectado!'));
+  whatsappClient.on('qr', (qr) => {
+    lastQr = qr;
+    connectionStatus = 'qr-pending';
+    console.log('QR Code gerado!');
+  });
+  whatsappClient.on('ready', () => {
+    lastQr = null;
+    connectionStatus = 'connected';
+    console.log('WhatsApp conectado!');
+  });
+  whatsappClient.on('disconnected', () => {
+    connectionStatus = 'disconnected';
+    console.log('WhatsApp desconectado!');
+  });
   whatsappClient.initialize();
 }
+
+// Inicializa o WhatsApp ao iniciar o servidor
+initWhatsApp();
+
+// Rota do QR Code
+app.get('/qrcode', async (req, res) => {
+  if (!lastQr) return res.send('waiting');
+  try {
+    const qrImage = await qrcode.toDataURL(lastQr);
+    res.send(qrImage);
+  } catch {
+    res.send('waiting');
+  }
+});
 
 // Disparo de mensagens
 app.post('/send', async (req, res) => {
