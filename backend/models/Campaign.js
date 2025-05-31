@@ -11,7 +11,7 @@ const campaignSchema = new mongoose.Schema({
   nome:             { type: String, required: true },
   descricao:        { type: String, default: '' },
   tipoEnvio:        { type: String, enum: ['imediato', 'agendado'], required: true },
-  dataAgendada:     { type: Date },                        // null se envio imediato
+  dataAgendada:     { type: Date },
   mensagem:         { type: String, required: true },
   contatos:         [contactSchema],
   velocidade:       { type: String, enum: ['seguro','medio','rapido'], default: 'medio' },

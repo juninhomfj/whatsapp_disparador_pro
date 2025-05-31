@@ -1,12 +1,68 @@
-<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
-<title>Etapa 3 - Contatos</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"><link rel="stylesheet" href="css/styles.css"><link rel="icon" type="image/x-icon" href="../favicon.ico">
-</head><body class="bg-light"><div class="container mt-5"><div class="card p-4">
-<h2>📁 Etapa 3: Importar Lista</h2><form id="step3Form" enctype="multipart/form-data">
-<div class="mb-3"><input type="file" class="form-control" id="arquivo" required></div>
-<button type="submit" class="btn btn-primary">Próximo ➡️</button></form><div class="mt-4" id="preview"></div></div></div>
-<script>
-document.getElementById("step3Form").addEventListener("submit",async e=>{
-e.preventDefault();const d=new FormData();d.append("arquivo",document.getElementById("arquivo").files[0]);
-const r=await fetch("http://localhost:3000/api/campaigns/upload",{method:"POST",body:d});
-if(r.ok)location.href="step4_configuracoes.html";else alert("Erro ao enviar arquivo");});
-</script></body></html>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Etapa 3 - Contatos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <div class="card p-4">
+      <h2>📁 Etapa 3: Importar Lista</h2>
+      <form id="step3Form" enctype="multipart/form-data">
+        <div class="mb-3">
+          <input type="file" class="form-control" id="arquivo" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Próximo ➡️</button>
+      </form>
+      <div class="mt-4" id="mapping"></div>
+    </div>
+  </div>
+  <script>
+    let columns = [];
+
+    document.getElementById("step3Form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const d = new FormData();
+      d.append("arquivo", document.getElementById("arquivo").files[0]);
+      const r = await fetch("http://localhost:3000/api/campaigns/upload", { method: "POST", body: d });
+      if (r.ok) {
+        const data = await r.json();
+        columns = data.columns;
+        showMappingForm();
+      } else {
+        alert("Erro ao enviar arquivo");
+      }
+    });
+
+    function showMappingForm() {
+      const mappingDiv = document.getElementById("mapping");
+      mappingDiv.innerHTML = `
+        <h5>Mapeie as colunas:</h5>
+        <form id="mappingForm">
+          <div class="mb-2">
+            <label>Nome:</label>
+            <select id="colNome" class="form-select">${columns.map(c => `<option>${c}</option>`).join('')}</select>
+          </div>
+          <div class="mb-2">
+            <label>Telefone:</label>
+            <select id="colTelefone" class="form-select">${columns.map(c => `<option>${c}</option>`).join('')}</select>
+          </div>
+          <div class="mb-2">
+            <label>Referência:</label>
+            <select id="colRef" class="form-select">${columns.map(c => `<option>${c}</option>`).join('')}</select>
+          </div>
+          <button type="submit" class="btn btn-success">Confirmar Mapeamento</button>
+        </form>
+      `;
+      document.getElementById("mappingForm").addEventListener("submit", e => {
+        e.preventDefault();
+        // Aqui você pode salvar o mapeamento em localStorage ou enviar para o backend
+        location.href = "step4_configuracoes.html";
+      });
+    }
+  </script>
+</body>
+</html>

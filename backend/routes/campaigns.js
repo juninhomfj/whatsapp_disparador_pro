@@ -115,7 +115,11 @@ router.post('/upload', authMiddleware, upload.single('arquivo'), async (req, res
 
     let jsonArray = [];
     if (ext === '.csv') {
-      jsonArray = await csv().fromFile(filePath);
+      const rawContent = fs.readFileSync(filePath, 'utf8');
+      // Detectar delimitador automático
+      const delimiter = rawContent.includes(';') ? ';' : ',';
+      // Converter para JSON
+      jsonArray = await csv({ delimiter }).fromString(rawContent);
     } else if (ext === '.xlsx' || ext === '.xls') {
       const workbook = XLSX.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
@@ -182,6 +186,23 @@ router.post('/finalizar', authMiddleware, async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Erro ao finalizar campanha' });
   }
+});
+
+// =============================================================================
+// 7) POST /api/campaigns/upload
+//    → Faz upload de arquivo e retorna os nomes das colunas
+// =============================================================================
+router.post('/upload', upload.single('arquivo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
+  const filePath = req.file.path;
+  // Lê a primeira linha do arquivo para pegar os nomes das colunas
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) return res.status(500).json({ error: 'Erro ao ler arquivo' });
+    const header = data.split('\n')[0].replace('\r', '');
+    const columns = header.split(',');
+    fs.unlinkSync(filePath); // Remove o arquivo após ler
+    res.json({ columns });
+  });
 });
 
 module.exports = router;
