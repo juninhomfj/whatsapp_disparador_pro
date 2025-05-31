@@ -1,0 +1,12 @@
+<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
+<title>Etapa 3 - Contatos</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head><body class="bg-light"><div class="container mt-5"><div class="card p-4">
+<h2>📁 Etapa 3: Importar Lista</h2><form id="step3Form" enctype="multipart/form-data">
+<div class="mb-3"><input type="file" class="form-control" id="arquivo" required></div>
+<button type="submit" class="btn btn-primary">Próximo ➡️</button></form><div class="mt-4" id="preview"></div></div></div>
+<script>
+document.getElementById("step3Form").addEventListener("submit",async e=>{
+e.preventDefault();const d=new FormData();d.append("arquivo",document.getElementById("arquivo").files[0]);
+const r=await fetch("http://localhost:3000/api/campaigns/upload",{method:"POST",body:d});
+if(r.ok)location.href="step4_configuracoes.html";else alert("Erro ao enviar arquivo");});
+</script></body></html>
