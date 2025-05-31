@@ -6,7 +6,8 @@
   <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <body>
-  <div class="container">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
     <h2>Conectar WhatsApp</h2>
     <div id="qrCode"></div>
     <p class="qr-instructions">
@@ -15,7 +16,6 @@
       3. Escaneie o QR Code
     </p>
   </div>
-  <div id="sidebar-container"></div>
   <script>
     fetch('../sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
   </script>

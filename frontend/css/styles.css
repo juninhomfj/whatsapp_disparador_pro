@@ -2,6 +2,8 @@
 body {
   background: #f8fafc;
   font-family: 'Inter', Arial, sans-serif;
+  transition: margin-left 0.3s cubic-bezier(.4,2,.6,1);
+  margin-left: 220px; /* igual à largura do sidebar */
 }
 .card {
   border-radius: 18px;
@@ -113,4 +115,15 @@ h2, h5 {
 .export-btn {
     background: #1de9b6;
     color: #000;
+}
+
+/* Adicione ao seu CSS global ou em cada página */
+body, .main-content {
+  transition: margin-left 0.3s cubic-bezier(.4,2,.6,1);
+  margin-left: 220px; /* igual à largura do sidebar */
+}
+
+.sidebar.collapsed ~ body,
+.sidebar.collapsed ~ .main-content {
+  margin-left: 64px; /* igual à largura do sidebar recolhido */
 }

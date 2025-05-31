@@ -8,169 +8,171 @@
 </head>
 <body>
   <div id="sidebar-container"></div>
-  <div class="container mt-5">
-    <div class="card p-4">
-      <h2>📇 Meus Contatos</h2>
-      <div>
-        <input type="text" id="busca" placeholder="Buscar por nome, telefone ou tag" class="form-control mb-2">
-        <button class="btn btn-primary" onclick="abrirImportar()">Importar Contatos</button>
-      </div>
-      <div id="tagsFiltro" class="mb-3"></div>
-      <div id="listaContatos"></div>
-    </div>
-  </div>
-
-  <!-- Modal de Importação de Contatos -->
-  <div class="modal fade" id="modalImportar" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="formImportar" enctype="multipart/form-data">
-          <div class="modal-header">
-            <h5 class="modal-title">Importar Contatos</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <input type="file" name="arquivo" class="form-control mb-2" required>
-            <input type="text" name="tags" class="form-control" placeholder="Tags separadas por vírgula (ex: clientes,2024)">
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-success">Importar</button>
-          </div>
-        </form>
+  <div class="main-content">
+    <div class="container mt-5">
+      <div class="card p-4">
+        <h2>📇 Meus Contatos</h2>
+        <div>
+          <input type="text" id="busca" placeholder="Buscar por nome, telefone ou tag" class="form-control mb-2">
+          <button class="btn btn-primary" onclick="abrirImportar()">Importar Contatos</button>
+        </div>
+        <div id="tagsFiltro" class="mb-3"></div>
+        <div id="listaContatos"></div>
       </div>
     </div>
-  </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    // Abrir o modal de importação
-    function abrirImportar() {
-      const modal = new bootstrap.Modal(document.getElementById('modalImportar'));
-      modal.show();
-    }
+    <!-- Modal de Importação de Contatos -->
+    <div class="modal fade" id="modalImportar" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="formImportar" enctype="multipart/form-data">
+            <div class="modal-header">
+              <h5 class="modal-title">Importar Contatos</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <input type="file" name="arquivo" class="form-control mb-2" required>
+              <input type="text" name="tags" class="form-control" placeholder="Tags separadas por vírgula (ex: clientes,2024)">
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-success">Importar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 
-    // Importar contatos
-    document.getElementById('formImportar').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const form = e.target;
-      const data = new FormData(form);
-      const tags = data.get('tags').split(',').map(t => t.trim()).filter(Boolean);
-      data.set('tags', JSON.stringify(tags));
-      const r = await fetch('/api/contacts/importar', { method: 'POST', body: data });
-      const resp = await r.json();
-      if (r.ok) {
-        bootstrap.Modal.getInstance(document.getElementById('modalImportar')).hide();
-        form.reset();
-        alert(`Importação concluída! ${resp.inseridos} contatos adicionados.`);
-        carregarContatos();
-      } else {
-        alert(resp.error || 'Erro ao importar');
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Abrir o modal de importação
+      function abrirImportar() {
+        const modal = new bootstrap.Modal(document.getElementById('modalImportar'));
+        modal.show();
       }
-    });
 
-    // Remover contato
-    async function removerContato(id) {
-      if (!confirm("Remover este contato?")) return;
-      await fetch(`/api/contacts/${id}`, { method: "DELETE" });
-      carregarContatos();
-    }
-
-    // Busca e filtro por tags
-    document.getElementById('busca').addEventListener('input', function() {
-      carregarContatosPorBusca(this.value);
-    });
-
-    async function carregarContatosPorBusca(busca) {
-      const r = await fetch("/api/contacts");
-      const contatos = await r.json();
-      const buscaLower = busca.toLowerCase();
-      const filtrados = contatos.filter(c =>
-        c.nome.toLowerCase().includes(buscaLower) ||
-        c.telefone.includes(buscaLower) ||
-        (c.tags||[]).some(tag => tag.toLowerCase().includes(buscaLower))
-      );
-      renderTabela(filtrados);
-    }
-
-    function renderTabela(contatos) {
-      let html = "<table class='table'><tr><th><input type='checkbox' onclick='selecionarTodos(this)'></th><th>Nome</th><th>Telefone</th><th>Tags</th><th></th></tr>";
-      for (const c of contatos) {
-        html += `<tr>
-          <td><input type="checkbox" class="contato-checkbox" value="${c._id}"></td>
-          <td>${c.nome}</td>
-          <td>${c.telefone}</td>
-          <td>
-            ${(c.tags||[]).map(tag => `<span class="badge bg-info me-1">${tag}</span>`).join('')}
-            <button class="btn btn-sm btn-outline-secondary" onclick="editarTags('${c._id}', '${(c.tags||[]).join(',')}')">Editar</button>
-          </td>
-          <td><button class="btn btn-sm btn-danger" onclick="removerContato('${c._id}')">Remover</button></td>
-        </tr>`;
-      }
-      html += "</table>";
-      html += `<button class="btn btn-success mt-2" onclick="adicionarSelecionadosCampanha()">Adicionar selecionados à campanha</button>`;
-      document.getElementById("listaContatos").innerHTML = html;
-    }
-
-    async function editarTags(id, tagsStr) {
-      const tags = prompt("Editar tags separadas por vírgula:", tagsStr);
-      if (tags !== null) {
-        await fetch(`/api/contacts/${id}/tags`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tags: tags.split(',').map(t=>t.trim()).filter(Boolean) })
-        });
-        carregarContatos();
-      }
-    }
-
-    async function carregarContatos(tag = "") {
-      const r = await fetch("/api/contacts" + (tag ? "?tag=" + tag : ""));
-      const contatos = await r.json();
-      renderTabela(contatos);
-      carregarTags();
-    }
-
-    async function carregarTags() {
-      const r = await fetch("/api/contacts");
-      const contatos = await r.json();
-      // Extrai todas as tags únicas
-      const tagsSet = new Set();
-      contatos.forEach(c => (c.tags||[]).forEach(tag => tagsSet.add(tag)));
-      const tags = Array.from(tagsSet);
-      // Monta os botões de tag
-      let html = "Filtrar/Selecionar por tag: ";
-      tags.forEach(tag => {
-        html += `<button class="btn btn-sm btn-info me-1 mb-1" onclick="selecionarPorTag('${tag}')">${tag}</button>`;
-      });
-      document.getElementById("tagsFiltro").innerHTML = html;
-    }
-
-    function selecionarPorTag(tag) {
-      document.querySelectorAll('.contato-checkbox').forEach(cb => {
-        // Busca a linha da tabela (tr) e verifica se a tag está presente
-        const tr = cb.closest('tr');
-        if (tr && tr.innerHTML.includes(`>${tag}<`)) {
-          cb.checked = true;
+      // Importar contatos
+      document.getElementById('formImportar').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const data = new FormData(form);
+        const tags = data.get('tags').split(',').map(t => t.trim()).filter(Boolean);
+        data.set('tags', JSON.stringify(tags));
+        const r = await fetch('/api/contacts/importar', { method: 'POST', body: data });
+        const resp = await r.json();
+        if (r.ok) {
+          bootstrap.Modal.getInstance(document.getElementById('modalImportar')).hide();
+          form.reset();
+          alert(`Importação concluída! ${resp.inseridos} contatos adicionados.`);
+          carregarContatos();
+        } else {
+          alert(resp.error || 'Erro ao importar');
         }
       });
-    }
 
-    function selecionarTodos(box) {
-      document.querySelectorAll('.contato-checkbox').forEach(cb => cb.checked = box.checked);
-    }
+      // Remover contato
+      async function removerContato(id) {
+        if (!confirm("Remover este contato?")) return;
+        await fetch(`/api/contacts/${id}`, { method: "DELETE" });
+        carregarContatos();
+      }
 
-    function adicionarSelecionadosCampanha() {
-      const selecionados = Array.from(document.querySelectorAll('.contato-checkbox:checked')).map(cb => cb.value);
-      if (!selecionados.length) return alert("Selecione ao menos um contato!");
-      localStorage.setItem('contatosSelecionados', JSON.stringify(selecionados));
-      window.location.href = "step1_detalhes.html"; // Ou para o step desejado da campanha
-    }
+      // Busca e filtro por tags
+      document.getElementById('busca').addEventListener('input', function() {
+        carregarContatosPorBusca(this.value);
+      });
 
-    carregarContatos();
-    carregarTags();
-  </script>
-  <script>
-    fetch('sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
-  </script>
+      async function carregarContatosPorBusca(busca) {
+        const r = await fetch("/api/contacts");
+        const contatos = await r.json();
+        const buscaLower = busca.toLowerCase();
+        const filtrados = contatos.filter(c =>
+          c.nome.toLowerCase().includes(buscaLower) ||
+          c.telefone.includes(buscaLower) ||
+          (c.tags||[]).some(tag => tag.toLowerCase().includes(buscaLower))
+        );
+        renderTabela(filtrados);
+      }
+
+      function renderTabela(contatos) {
+        let html = "<table class='table'><tr><th><input type='checkbox' onclick='selecionarTodos(this)'></th><th>Nome</th><th>Telefone</th><th>Tags</th><th></th></tr>";
+        for (const c of contatos) {
+          html += `<tr>
+            <td><input type="checkbox" class="contato-checkbox" value="${c._id}"></td>
+            <td>${c.nome}</td>
+            <td>${c.telefone}</td>
+            <td>
+              ${(c.tags||[]).map(tag => `<span class="badge bg-info me-1">${tag}</span>`).join('')}
+              <button class="btn btn-sm btn-outline-secondary" onclick="editarTags('${c._id}', '${(c.tags||[]).join(',')}')">Editar</button>
+            </td>
+            <td><button class="btn btn-sm btn-danger" onclick="removerContato('${c._id}')">Remover</button></td>
+          </tr>`;
+        }
+        html += "</table>";
+        html += `<button class="btn btn-success mt-2" onclick="adicionarSelecionadosCampanha()">Adicionar selecionados à campanha</button>`;
+        document.getElementById("listaContatos").innerHTML = html;
+      }
+
+      async function editarTags(id, tagsStr) {
+        const tags = prompt("Editar tags separadas por vírgula:", tagsStr);
+        if (tags !== null) {
+          await fetch(`/api/contacts/${id}/tags`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tags: tags.split(',').map(t=>t.trim()).filter(Boolean) })
+          });
+          carregarContatos();
+        }
+      }
+
+      async function carregarContatos(tag = "") {
+        const r = await fetch("/api/contacts" + (tag ? "?tag=" + tag : ""));
+        const contatos = await r.json();
+        renderTabela(contatos);
+        carregarTags();
+      }
+
+      async function carregarTags() {
+        const r = await fetch("/api/contacts");
+        const contatos = await r.json();
+        // Extrai todas as tags únicas
+        const tagsSet = new Set();
+        contatos.forEach(c => (c.tags||[]).forEach(tag => tagsSet.add(tag)));
+        const tags = Array.from(tagsSet);
+        // Monta os botões de tag
+        let html = "Filtrar/Selecionar por tag: ";
+        tags.forEach(tag => {
+          html += `<button class="btn btn-sm btn-info me-1 mb-1" onclick="selecionarPorTag('${tag}')">${tag}</button>`;
+        });
+        document.getElementById("tagsFiltro").innerHTML = html;
+      }
+
+      function selecionarPorTag(tag) {
+        document.querySelectorAll('.contato-checkbox').forEach(cb => {
+          // Busca a linha da tabela (tr) e verifica se a tag está presente
+          const tr = cb.closest('tr');
+          if (tr && tr.innerHTML.includes(`>${tag}<`)) {
+            cb.checked = true;
+          }
+        });
+      }
+
+      function selecionarTodos(box) {
+        document.querySelectorAll('.contato-checkbox').forEach(cb => cb.checked = box.checked);
+      }
+
+      function adicionarSelecionadosCampanha() {
+        const selecionados = Array.from(document.querySelectorAll('.contato-checkbox:checked')).map(cb => cb.value);
+        if (!selecionados.length) return alert("Selecione ao menos um contato!");
+        localStorage.setItem('contatosSelecionados', JSON.stringify(selecionados));
+        window.location.href = "step1_detalhes.html"; // Ou para o step desejado da campanha
+      }
+
+      carregarContatos();
+      carregarTags();
+    </script>
+    <script>
+      fetch('sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
+    </script>
+  </div>
 </body>
 </html>
