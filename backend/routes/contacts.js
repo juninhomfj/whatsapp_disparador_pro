@@ -22,25 +22,26 @@ router.get('/', authMiddleware, async (req, res) => {
 // Adicionar contatos em lote (ex: após importação)
 router.post('/importar', authMiddleware, upload.single('arquivo'), async (req, res) => {
   try {
-    // Recebe tags como string JSON
     const tags = req.body.tags ? JSON.parse(req.body.tags) : [];
     if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
 
-    // Lê e converte o CSV
     const filePath = req.file.path;
     const contatos = await csv().fromFile(filePath);
-    fs.unlinkSync(filePath); // Remove o arquivo temporário
+    fs.unlinkSync(filePath);
 
-    // Monta os docs para salvar
-    const docs = contatos.map(c => ({
-      nome: c.nome || c.Nome || c.NOME || "",
-      telefone: c.telefone || c.Telefone || c.TELEFONE || "",
-      ref: c.ref || c.Ref || c.REF || "",
-      userId: req.userId,
-      tags
-    }));
+    // Validação: só aceita contatos com telefone válido (10 a 15 dígitos numéricos)
+    const docs = contatos
+      .map(c => ({
+        nome: c.nome || c.Nome || c.NOME || "",
+        telefone: (c.telefone || c.Telefone || c.TELEFONE || "").replace(/\D/g, ""),
+        ref: c.ref || c.Ref || c.REF || "",
+        userId: req.userId,
+        tags
+      }))
+      .filter(c => c.nome && /^\d{10,15}$/.test(c.telefone));
 
-    // Salva no banco
+    if (!docs.length) return res.status(400).json({ error: 'Nenhum contato válido encontrado.' });
+
     await Contact.insertMany(docs);
     res.json({ success: true, inseridos: docs.length });
   } catch (err) {

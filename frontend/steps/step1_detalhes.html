@@ -36,25 +36,99 @@
         </div>
     </div>
     <div id="sidebar-container"></div>
+    <div id="contatosSelecionadosBox" class="container mt-3"></div>
+    <button class="btn btn-outline-primary mb-3" onclick="adicionarMaisContatos()">Adicionar mais contatos</button>
     <script>
         document.getElementById("tipoEnvio").addEventListener("change", e => {
             document.getElementById("campoData").style.display = e.target.value === "agendado" ? "block" : "none"
         });
         document.getElementById("step1Form").addEventListener("submit", async e => {
             e.preventDefault();
+            // Pegue os contatos selecionados do localStorage
+            let contatosSelecionados = [];
+            try {
+                contatosSelecionados = JSON.parse(localStorage.getItem('contatosSelecionados')) || [];
+            } catch {}
+            // Monte o corpo da requisição
+            const body = {
+                nome: document.getElementById("nomeCampanha").value,
+                descricao: document.getElementById("descricao").value,
+                tipoEnvio: document.getElementById("tipoEnvio").value,
+                dataAgendada: document.getElementById("dataAgendada").value,
+                contatos: contatosSelecionados // envie os IDs dos contatos selecionados
+            };
             await fetch("http://localhost:3000/api/campaigns/temp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    nome: document.getElementById("nomeCampanha").value,
-                    descricao: document.getElementById("descricao").value,
-                    tipoEnvio: document.getElementById("tipoEnvio").value,
-                    dataAgendada: document.getElementById("dataAgendada").value
-                })
+                body: JSON.stringify(body)
             });
+            // Limpe os contatos selecionados do localStorage
+            localStorage.removeItem('contatosSelecionados');
             location.href = "step2_mensagem.html";
         });
         fetch('../sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
+
+        // Mostra os contatos selecionados (se houver)
+        async function mostrarContatosSelecionados() {
+          let contatosSelecionados = [];
+          try {
+            contatosSelecionados = JSON.parse(localStorage.getItem('contatosSelecionados')) || [];
+          } catch {}
+          if (!contatosSelecionados.length) {
+            document.getElementById('contatosSelecionadosBox').innerHTML = "";
+            return;
+          }
+          // Busca os dados completos dos contatos pelo backend
+          const r = await fetch("/api/contacts");
+          const todos = await r.json();
+          const selecionados = todos.filter(c => contatosSelecionados.includes(c._id));
+          let html = "<b>Contatos selecionados:</b><table class='table table-sm'><tr><th>Nome</th><th>Telefone</th><th>Tags</th><th></th></tr>";
+          for (const c of selecionados) {
+            html += `<tr>
+              <td>${c.nome}</td>
+              <td>${c.telefone}</td>
+              <td>${(c.tags||[]).join(', ')}</td>
+              <td><button class="btn btn-sm btn-danger" onclick="removerContatoSelecionado('${c._id}')">Remover</button></td>
+            </tr>`;
+          }
+          html += "</table>";
+          document.getElementById('contatosSelecionadosBox').innerHTML = html;
+        }
+
+        // Remove um contato da seleção
+        function removerContatoSelecionado(id) {
+          let contatosSelecionados = [];
+          try {
+            contatosSelecionados = JSON.parse(localStorage.getItem('contatosSelecionados')) || [];
+          } catch {}
+          contatosSelecionados = contatosSelecionados.filter(cid => cid !== id);
+          localStorage.setItem('contatosSelecionados', JSON.stringify(contatosSelecionados));
+          mostrarContatosSelecionados();
+        }
+
+        // Redireciona para a tela de contatos
+        function adicionarMaisContatos() {
+          // Salva os campos do formulário
+          localStorage.setItem('draftStep1', JSON.stringify({
+            nome: document.getElementById("nomeCampanha").value,
+            descricao: document.getElementById("descricao").value,
+            tipoEnvio: document.getElementById("tipoEnvio").value,
+            dataAgendada: document.getElementById("dataAgendada").value
+          }));
+          window.location.href = "../contatos.html";
+        }
+
+        // Ao carregar a página, recupere se existir:
+        window.addEventListener('DOMContentLoaded', () => {
+          const draft = JSON.parse(localStorage.getItem('draftStep1') || '{}');
+          if (draft.nome) document.getElementById("nomeCampanha").value = draft.nome;
+          if (draft.descricao) document.getElementById("descricao").value = draft.descricao;
+          if (draft.tipoEnvio) document.getElementById("tipoEnvio").value = draft.tipoEnvio;
+          if (draft.dataAgendada) document.getElementById("dataAgendada").value = draft.dataAgendada;
+        });
+
+        // Chame ao carregar a página
+        mostrarContatosSelecionados();
     </script>
 </body>
 </html>

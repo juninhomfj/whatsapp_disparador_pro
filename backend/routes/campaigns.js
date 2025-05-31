@@ -6,6 +6,7 @@ const XLSX    = require('xlsx');
 const fs      = require('fs');
 const path    = require('path');
 const Campaign = require('../models/Campaign');
+const Contact = require('../models/Contact');
 const authMiddleware = require('../middleware/authMiddleware');
 const mongoose = require('mongoose');
 
@@ -80,6 +81,16 @@ router.post('/temp', authMiddleware, async (req, res) => {
     if (req.body.mensagem)     updateFields.mensagem = req.body.mensagem;
     if (req.body.velocidade)   updateFields.velocidade = req.body.velocidade;
     if (req.body.ordem)        updateFields.ordem = req.body.ordem;
+
+    if (req.body.contatos && Array.isArray(req.body.contatos)) {
+      // Busque os contatos completos pelo ID
+      const contatos = await Contact.find({ _id: { $in: req.body.contatos }, userId: req.userId });
+      updateFields.contatos = contatos.map(c => ({
+        nome: c.nome,
+        telefone: c.telefone,
+        ref: c.ref
+      }));
+    }
 
     // Tenta encontrar um draft (status: 'draft') deste usuário
     let campaign = await Campaign.findOne({ userId: req.userId, status: 'draft' });

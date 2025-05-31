@@ -41,20 +41,38 @@
       <div id="instancias"></div>
       <button class="btn btn-outline-primary mt-3" onclick="criarInstancia()">+ Nova Instância</button>
       <button class="btn btn-success mt-3" onclick="iniciarCampanha()">🚀 Iniciar Campanha</button>
+      <div id="mensagemAlerta"></div>
     </div>
   </div>
   <script>
     // Exemplo: buscar dados do draft e instâncias do backend
     let instanciaSelecionada = null;
     async function carregarResumo() {
-      // Exemplo: buscar dados do draft
+      // Buscar dados do draft
       const r = await fetch("http://localhost:3000/api/campaigns/draft");
       const draft = await r.json();
-      document.getElementById("resumo").innerHTML = `
+      let html = `
         <b>Mensagem:</b> ${draft.mensagem}<br>
         <b>Contatos:</b> ${draft.contatos ? draft.contatos.length : 0}<br>
         <b>Agendamento:</b> ${draft.dataAgendada ? draft.dataAgendada : 'Imediato'}
       `;
+      // Exibir tabela de contatos, se houver
+      if (draft.contatos && draft.contatos.length) {
+        html += `<div class="mt-2"><b>Lista de contatos:</b>
+          <div style="max-height:200px;overflow:auto;">
+          <table class="table table-sm table-bordered mt-1">
+            <tr><th>Nome</th><th>Telefone</th><th>Referência</th><th></th></tr>
+            ${draft.contatos.map((c, i) => `<tr>
+              <td>${c.nome || ''}</td>
+              <td>${c.telefone || ''}</td>
+              <td>${c.ref || ''}</td>
+              <td><button class="btn btn-sm btn-danger" onclick="removerContato(${i})">Remover</button></td>
+            </tr>`).join('')}
+          </table>
+          </div>
+        </div>`;
+      }
+      document.getElementById("resumo").innerHTML = html;
     }
 
     async function carregarInstancias() {
@@ -95,21 +113,61 @@
         alert("Selecione uma instância de WhatsApp!");
         return;
       }
+      if (!confirm("Tem certeza que deseja iniciar a campanha? Esta ação enviará mensagens para todos os contatos listados.")) {
+        return;
+      }
       const r = await fetch("http://localhost:3000/api/campaigns/finalizar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ instanciaId: instanciaSelecionada })
       });
       if (r.ok) {
-        alert("Campanha iniciada com sucesso!");
-        location.href = "dashboard.html";
+        mostrarAlerta("Campanha iniciada com sucesso!", "success");
+        setTimeout(() => location.href = "dashboard.html", 2000);
       } else {
-        alert("Erro ao iniciar campanha");
+        mostrarAlerta("Erro ao iniciar campanha", "danger");
       }
+    }
+
+    async function removerContato(index) {
+      // Busca o draft atual
+      const r = await fetch("http://localhost:3000/api/campaigns/draft");
+      const draft = await r.json();
+      if (!draft.contatos) return;
+      draft.contatos.splice(index, 1);
+      // Atualiza o draft no backend
+      await fetch("http://localhost:3000/api/campaigns/temp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contatos: draft.contatos })
+      });
+      carregarResumo();
+    }
+
+    function mostrarAlerta(msg, tipo = "success") {
+      document.getElementById("mensagemAlerta").innerHTML = `
+        <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+          ${msg}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      `;
+    }
+
+    // Exemplo: função chamada ao finalizar a campanha
+    async function finalizarCampanha() {
+      // ... código para enviar dados ao backend ...
+      // Após sucesso:
+      localStorage.removeItem('contatosSelecionados');
+      localStorage.removeItem('draftStep1');
+      // Limpe outros drafts temporários se houver
+      alert("Campanha criada com sucesso!");
+      window.location.href = "dashboard.html"; // Ou página desejada
     }
 
     carregarResumo();
     carregarInstancias();
+    document.getElementById("resumo").innerHTML = "<div class='text-center text-muted'>Carregando resumo...</div>";
+    document.getElementById("instancias").innerHTML = "<div class='text-center text-muted'>Carregando instâncias...</div>";
     fetch("http://localhost:3000/api/campaigns/draft")
       .then(r => r.json())
       .then(draft => {

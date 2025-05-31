@@ -54,15 +54,17 @@
       e.preventDefault();
       const form = e.target;
       const data = new FormData(form);
-      // Converte tags para array
       const tags = data.get('tags').split(',').map(t => t.trim()).filter(Boolean);
       data.set('tags', JSON.stringify(tags));
       const r = await fetch('/api/contacts/importar', { method: 'POST', body: data });
+      const resp = await r.json();
       if (r.ok) {
         bootstrap.Modal.getInstance(document.getElementById('modalImportar')).hide();
+        form.reset();
+        alert(`Importação concluída! ${resp.inseridos} contatos adicionados.`);
         carregarContatos();
       } else {
-        alert('Erro ao importar');
+        alert(resp.error || 'Erro ao importar');
       }
     });
 
@@ -91,9 +93,10 @@
     }
 
     function renderTabela(contatos) {
-      let html = "<table class='table'><tr><th>Nome</th><th>Telefone</th><th>Tags</th><th></th></tr>";
+      let html = "<table class='table'><tr><th><input type='checkbox' onclick='selecionarTodos(this)'></th><th>Nome</th><th>Telefone</th><th>Tags</th><th></th></tr>";
       for (const c of contatos) {
         html += `<tr>
+          <td><input type="checkbox" class="contato-checkbox" value="${c._id}"></td>
           <td>${c.nome}</td>
           <td>${c.telefone}</td>
           <td>
@@ -104,6 +107,7 @@
         </tr>`;
       }
       html += "</table>";
+      html += `<button class="btn btn-success mt-2" onclick="adicionarSelecionadosCampanha()">Adicionar selecionados à campanha</button>`;
       document.getElementById("listaContatos").innerHTML = html;
     }
 
@@ -123,9 +127,47 @@
       const r = await fetch("/api/contacts" + (tag ? "?tag=" + tag : ""));
       const contatos = await r.json();
       renderTabela(contatos);
+      carregarTags();
+    }
+
+    async function carregarTags() {
+      const r = await fetch("/api/contacts");
+      const contatos = await r.json();
+      // Extrai todas as tags únicas
+      const tagsSet = new Set();
+      contatos.forEach(c => (c.tags||[]).forEach(tag => tagsSet.add(tag)));
+      const tags = Array.from(tagsSet);
+      // Monta os botões de tag
+      let html = "Filtrar/Selecionar por tag: ";
+      tags.forEach(tag => {
+        html += `<button class="btn btn-sm btn-info me-1 mb-1" onclick="selecionarPorTag('${tag}')">${tag}</button>`;
+      });
+      document.getElementById("tagsFiltro").innerHTML = html;
+    }
+
+    function selecionarPorTag(tag) {
+      document.querySelectorAll('.contato-checkbox').forEach(cb => {
+        // Busca a linha da tabela (tr) e verifica se a tag está presente
+        const tr = cb.closest('tr');
+        if (tr && tr.innerHTML.includes(`>${tag}<`)) {
+          cb.checked = true;
+        }
+      });
+    }
+
+    function selecionarTodos(box) {
+      document.querySelectorAll('.contato-checkbox').forEach(cb => cb.checked = box.checked);
+    }
+
+    function adicionarSelecionadosCampanha() {
+      const selecionados = Array.from(document.querySelectorAll('.contato-checkbox:checked')).map(cb => cb.value);
+      if (!selecionados.length) return alert("Selecione ao menos um contato!");
+      localStorage.setItem('contatosSelecionados', JSON.stringify(selecionados));
+      window.location.href = "step1_detalhes.html"; // Ou para o step desejado da campanha
     }
 
     carregarContatos();
+    carregarTags();
   </script>
   <script>
     fetch('sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
