@@ -85,9 +85,7 @@
     fetch("http://localhost:3000/api/campaigns/draft")
       .then(r => r.json())
       .then(draft => {
-        if (!draft || !draft.nome) {
-          window.location.href = "step2_publico.html";
-        }
+        if (!draft.mensagem) window.location.href = "step2_mensagem.html";
       });
   </script>
 </body>

@@ -1,3 +1,6 @@
-2025/05/31-14:23:23.566 2ea8 Reusing MANIFEST C:\Users\DELL\whatsapp_disparador_pro\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/MANIFEST-000001
-2025/05/31-14:23:23.573 2ea8 Recovering log #4
-2025/05/31-14:23:23.574 2ea8 Reusing old log C:\Users\DELL\whatsapp_disparador_pro\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/000004.log 
+2025/05/31-15:10:09.263 541c Reusing MANIFEST C:\Users\DELL\whatsapp_disparador_pro\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/MANIFEST-000001
+2025/05/31-15:10:09.264 541c Recovering log #4
+2025/05/31-15:10:09.266 541c Reusing old log C:\Users\DELL\whatsapp_disparador_pro\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/000004.log 
+2025/05/31-15:11:10.051 36c8 Level-0 table #8: started
+2025/05/31-15:11:10.064 36c8 Level-0 table #8: 24188 bytes OK
+2025/05/31-15:11:10.069 36c8 Delete type=0 #4

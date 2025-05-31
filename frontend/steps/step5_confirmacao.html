@@ -110,6 +110,11 @@
 
     carregarResumo();
     carregarInstancias();
+    fetch("http://localhost:3000/api/campaigns/draft")
+      .then(r => r.json())
+      .then(draft => {
+        if (!draft || !draft.velocidade || !draft.ordem) window.location.href = "step4_configuracoes.html";
+      });
   </script>
 </body>
 </html>

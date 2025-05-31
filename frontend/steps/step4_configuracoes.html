@@ -58,6 +58,12 @@
     </div>
   </div>
   <script>
+    fetch("http://localhost:3000/api/campaigns/draft")
+      .then(r => r.json())
+      .then(draft => {
+        if (!draft || !draft.contatos || !draft.contatos.length) window.location.href = "step3_contatos.html";
+      });
+
     document.getElementById("step4Form").addEventListener("submit", async e => {
       e.preventDefault();
       await fetch("http://localhost:3000/api/campaigns/temp", {

@@ -7,6 +7,7 @@ const qrcode = require('qrcode');
 const authRoutes = require('./routes/auth');
 const campaignRoutes = require('./routes/campaigns');
 const instanceRoutes = require('./routes/instances');
+const contactRoutes = require('./routes/contacts');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -31,6 +32,7 @@ app.use(express.static('../frontend'));
 app.use('/api/auth', authRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/whatsapp/instances', instanceRoutes);
+app.use('/api/contacts', contactRoutes);
 
 // Variáveis de estado WhatsApp (Mantidas)
 let whatsappClient = null;
