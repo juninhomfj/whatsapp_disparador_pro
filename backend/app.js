@@ -14,38 +14,38 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Conexão com MongoDB (Adicionado da IA)
+// Conexão com MongoDB (Aprimorada para Atlas)
 mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
+  tls: true,
+  tlsAllowInvalidCertificates: true
 })
 .then(() => console.log('🗄️ MongoDB conectado'))
 .catch(err => console.error('Erro MongoDB:', err));
 
-// Middlewares (Aprimorados)
+// Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir frontend (Mantido do seu código)
+// Servir frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Rotas (Combinadas)
+// Rotas da API
 app.use('/api/auth', authRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/whatsapp/instances', instanceRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/instancias', instanciasRoutes);
 
-// Variáveis de estado WhatsApp (Mantidas)
+// Variáveis de estado WhatsApp
 let whatsappClient = null;
 let lastQr = null;
 let connectionStatus = 'disconnected';
 
-// Limpeza de QR (Mantida)
+// Limpeza de QR a cada 2 minutos
 setInterval(() => lastQr = null, 120000);
 
-// Rotas WhatsApp (Mantidas)
+// Rotas WhatsApp
 app.get('/api/status', (req, res) => res.json({ status: connectionStatus }));
 app.get('/api/qrcode', async (req, res) => {
   if (!lastQr) return res.status(202).json({ status: 'pending' });
@@ -56,7 +56,7 @@ app.get('/api/qrcode', async (req, res) => {
   }
 });
 
-// Inicialização WhatsApp (Mantida e Aprimorada)
+// Inicialização WhatsApp
 function initWhatsApp() {
   whatsappClient = new Client({
     authStrategy: new LocalAuth(),
@@ -91,7 +91,7 @@ function initWhatsApp() {
   whatsappClient.initialize();
 }
 
-// Endpoint de Envio (Aprimorado)
+// Endpoint de envio de mensagens
 app.post('/api/send', async (req, res) => {
   if (connectionStatus !== 'connected') {
     return res.status(425).json({ error: 'WhatsApp não conectado' });
@@ -117,6 +117,6 @@ app.post('/api/send', async (req, res) => {
   }
 });
 
-// Inicialização (Mantida)
+// Inicialização do WhatsApp e servidor
 initWhatsApp();
 app.listen(port, () => console.log(`🚀 Servidor rodando na porta ${port}`));
