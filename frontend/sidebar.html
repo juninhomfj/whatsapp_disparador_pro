@@ -1,0 +1,26 @@
+<!-- sidebar.html -->
+<div id="sidebar" class="sidebar">
+  <button id="sidebarToggle" class="btn btn-secondary">☰</button>
+  <ul>
+    <li><a href="../dashboard.html">Dashboard</a></li>
+    <li><a href="../steps/instancias.html">Instâncias</a></li>
+    <li><a href="../steps/step1_detalhes.html">Nova Campanha</a></li>
+    <li><a href="../relatorios.html">Relatórios</a></li>
+    <li><a href="../configuracoes.html">Configurações</a></li>
+    <li><a href="../login.html">Sair</a></li>
+  </ul>
+</div>
+<style>
+  .sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100%; background: #222; color: #fff; padding: 20px 0; transition: width 0.2s; z-index: 1000;}
+  .sidebar ul { list-style: none; padding: 0; }
+  .sidebar ul li { margin: 20px 0; }
+  .sidebar ul li a { color: #fff; text-decoration: none; font-size: 18px; }
+  .sidebar.collapsed { width: 60px; }
+  .sidebar.collapsed ul li a { display: none; }
+  #sidebarToggle { background: none; border: none; color: #fff; font-size: 24px; margin-bottom: 20px; }
+</style>
+<script>
+  document.getElementById('sidebarToggle').onclick = function() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  }
+</script>

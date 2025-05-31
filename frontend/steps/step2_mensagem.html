@@ -13,6 +13,11 @@
 <button type="submit" class="btn btn-primary mt-3">Próximo ➡️</button>
 </form></div></div>
 <script>
+fetch("http://localhost:3000/api/campaigns/draft")
+  .then(r => r.json())
+  .then(draft => {
+    if (!draft.nome) window.location.href = "step1_detalhes.html";
+  });
 const msg=document.getElementById("mensagem"),prev=document.getElementById("preview");
 msg.addEventListener("input",()=>{prev.innerText=msg.value.replace(/{nome}/g,"João").replace(/{ref}/g,"Oferta")});
 function inserir(txt){const c=msg.selectionStart;msg.value=msg.value.slice(0,c)+txt+msg.value.slice(c);msg.dispatchEvent(new Event("input"));msg.focus();}

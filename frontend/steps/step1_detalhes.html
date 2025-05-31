@@ -35,6 +35,7 @@
             </form>
         </div>
     </div>
+    <div id="sidebar-container"></div>
     <script>
         document.getElementById("tipoEnvio").addEventListener("change", e => {
             document.getElementById("campoData").style.display = e.target.value === "agendado" ? "block" : "none"
@@ -53,6 +54,7 @@
             });
             location.href = "step2_mensagem.html";
         });
+        fetch('../sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
     </script>
 </body>
 </html>

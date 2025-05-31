@@ -1,10 +1,115 @@
-<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
-<title>Etapa 5 - Confirmação</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"><link rel="stylesheet" href="../css/styles.css"><link rel="icon" type="image/x-icon" href="favicon.ico">
-</head><body><div class="container mt-5"><div class="card p-4"><h2>✅ Etapa 5: Confirmação</h2>
-<p>Revise tudo antes de iniciar a campanha.</p>
-<button class="btn btn-success" onclick="iniciarCampanha()">🚀 Iniciar Campanha</button></div></div>
-<script>
-async function iniciarCampanha(){
-const r = await fetch("http://localhost:3000/api/campaigns/finalizar",{method:"POST"});
-if(r.ok){alert("Campanha iniciada com sucesso!");location.href="dashboard.html";}else alert("Erro ao iniciar campanha");}
-</script></body></html>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Etapa 5 - Confirmação</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <style>
+    .instancia-card {
+      border: 2px solid #eee;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      transition: box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .instancia-card.selected {
+      border-color: #198754;
+      box-shadow: 0 0 8px #19875444;
+    }
+    .instancia-foto {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 16px;
+      border: 2px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <div class="card p-4">
+      <h2>✅ Etapa 5: Confirmação</h2>
+      <p>Revise tudo antes de iniciar a campanha.</p>
+      <div id="resumo"></div>
+      <h4 class="mt-4">Selecione a instância de WhatsApp:</h4>
+      <div id="instancias"></div>
+      <button class="btn btn-outline-primary mt-3" onclick="criarInstancia()">+ Nova Instância</button>
+      <button class="btn btn-success mt-3" onclick="iniciarCampanha()">🚀 Iniciar Campanha</button>
+    </div>
+  </div>
+  <script>
+    // Exemplo: buscar dados do draft e instâncias do backend
+    let instanciaSelecionada = null;
+    async function carregarResumo() {
+      // Exemplo: buscar dados do draft
+      const r = await fetch("http://localhost:3000/api/campaigns/draft");
+      const draft = await r.json();
+      document.getElementById("resumo").innerHTML = `
+        <b>Mensagem:</b> ${draft.mensagem}<br>
+        <b>Contatos:</b> ${draft.contatos ? draft.contatos.length : 0}<br>
+        <b>Agendamento:</b> ${draft.dataAgendada ? draft.dataAgendada : 'Imediato'}
+      `;
+    }
+
+    async function carregarInstancias() {
+      const r = await fetch("http://localhost:3000/api/whatsapp/instances");
+      const instancias = await r.json();
+      const div = document.getElementById("instancias");
+      div.innerHTML = "";
+      if (!instancias.length) {
+        div.innerHTML = "<div class='alert alert-warning'>Nenhuma instância conectada. Crie uma nova para continuar.</div>";
+        return;
+      }
+      instancias.forEach(inst => {
+        div.innerHTML += `
+          <div class="instancia-card" onclick="selecionarInstancia('${inst.id}', this)">
+            <img src="${inst.fotoPerfil || '../img/whatsapp.png'}" class="instancia-foto" alt="Foto">
+            <div>
+              <b>${inst.nome || inst.numero}</b><br>
+              <small>${inst.status === 'connected' ? 'Conectado' : 'Desconectado'}</small>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function selecionarInstancia(id, el) {
+      instanciaSelecionada = id;
+      document.querySelectorAll('.instancia-card').forEach(card => card.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function criarInstancia() {
+      // Redireciona para tela de criação/conexão de instância
+      window.location.href = "instancias.html";
+    }
+
+    async function iniciarCampanha() {
+      if (!instanciaSelecionada) {
+        alert("Selecione uma instância de WhatsApp!");
+        return;
+      }
+      const r = await fetch("http://localhost:3000/api/campaigns/finalizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instanciaId: instanciaSelecionada })
+      });
+      if (r.ok) {
+        alert("Campanha iniciada com sucesso!");
+        location.href = "dashboard.html";
+      } else {
+        alert("Erro ao iniciar campanha");
+      }
+    }
+
+    carregarResumo();
+    carregarInstancias();
+  </script>
+</body>
+</html>

@@ -47,6 +47,11 @@
         <button class="back-btn" onclick="history.back()">Voltar</button>
     </div>
 
+    <div id="sidebar-container"></div>
+    <script>
+      fetch('../sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
+    </script>
+
     <script>
         function exportToCSV() {
             // Implementação futura

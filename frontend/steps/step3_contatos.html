@@ -18,6 +18,7 @@
         <button type="submit" class="btn btn-primary">Próximo ➡️</button>
       </form>
       <div class="mt-4" id="mapping"></div>
+      <div class="mt-3" id="contagemValidos"></div>
     </div>
   </div>
   <script>
@@ -57,12 +58,37 @@
           <button type="submit" class="btn btn-success">Confirmar Mapeamento</button>
         </form>
       `;
-      document.getElementById("mappingForm").addEventListener("submit", e => {
+      document.getElementById("mappingForm").addEventListener("submit", async e => {
         e.preventDefault();
-        // Aqui você pode salvar o mapeamento em localStorage ou enviar para o backend
-        location.href = "step4_configuracoes.html";
+        // Envie o arquivo e o mapeamento para o backend e receba os contatos processados
+        const d = new FormData();
+        d.append("arquivo", document.getElementById("arquivo").files[0]);
+        d.append("colNome", document.getElementById("colNome").value);
+        d.append("colTelefone", document.getElementById("colTelefone").value);
+        d.append("colRef", document.getElementById("colRef").value);
+
+        const r = await fetch("http://localhost:3000/api/campaigns/importar", { method: "POST", body: d });
+        if (r.ok) {
+          const data = await r.json();
+          const contatos = data.contatos || [];
+          const validos = contatos.filter(c => /^\d{10,15}$/.test(c.telefone)).length;
+          document.getElementById("contagemValidos").innerText = `Contatos válidos: ${validos}`;
+          // Salve os contatos no backend ou localStorage se desejar
+          setTimeout(() => location.href = "step4_configuracoes.html", 1500);
+        } else {
+          alert("Erro ao importar contatos");
+        }
       });
     }
+
+    // Validação: só pode acessar se já preencheu o step 2
+    fetch("http://localhost:3000/api/campaigns/draft")
+      .then(r => r.json())
+      .then(draft => {
+        if (!draft || !draft.nome) {
+          window.location.href = "step2_publico.html";
+        }
+      });
   </script>
 </body>
 </html>

@@ -6,6 +6,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const authRoutes = require('./routes/auth');
 const campaignRoutes = require('./routes/campaigns');
+const instanceRoutes = require('./routes/instances');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -29,6 +30,7 @@ app.use(express.static('../frontend'));
 // Rotas (Combinadas)
 app.use('/api/auth', authRoutes);
 app.use('/api/campaigns', campaignRoutes);
+app.use('/api/whatsapp/instances', instanceRoutes);
 
 // Variáveis de estado WhatsApp (Mantidas)
 let whatsappClient = null;

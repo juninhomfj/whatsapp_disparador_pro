@@ -49,6 +49,7 @@
     </div>
 
     <!-- Conteúdo Principal (será carregado após o splash) -->
+    <div id="sidebar-container"></div>
     <script>
         // Redirecionamento após o splash
         window.addEventListener('load', () => {
@@ -56,6 +57,8 @@
                 window.location.href = 'dashboard.html'; // Ou 'login.html' se preferir
             }, 2800); // Tempo deve ser menor que a animação
         });
+
+        fetch('../sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
     </script>
 </body>
 </html>

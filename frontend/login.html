@@ -28,6 +28,7 @@
             </div>
         </div>
     </div>
+    <div id="sidebar-container"></div>
     <script>
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -59,6 +60,8 @@
                 alert('Falha na conexão com o servidor');
             }
         });
+
+        fetch('../sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
     </script>
 </body>
 </html>

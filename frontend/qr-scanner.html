@@ -15,6 +15,10 @@
       3. Escaneie o QR Code
     </p>
   </div>
+  <div id="sidebar-container"></div>
+  <script>
+    fetch('../sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
+  </script>
   <script>
     async function updateQR() {
       const response = await fetch('/qrcode');

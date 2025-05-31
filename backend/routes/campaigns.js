@@ -104,59 +104,19 @@ router.post('/temp', authMiddleware, async (req, res) => {
 
 // =============================================================================
 // 5) POST /api/campaigns/upload
-//    → Faz upload de CSV/XLSX, parse, salva lista de contatos no draft
+//    → Faz upload de arquivo e retorna os nomes das colunas
 // =============================================================================
-router.post('/upload', authMiddleware, upload.single('arquivo'), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
-
-    const filePath = req.file.path;
-    const ext = path.extname(req.file.originalname).toLowerCase();
-
-    let jsonArray = [];
-    if (ext === '.csv') {
-      const rawContent = fs.readFileSync(filePath, 'utf8');
-      // Detectar delimitador automático
-      const delimiter = rawContent.includes(';') ? ';' : ',';
-      // Converter para JSON
-      jsonArray = await csv({ delimiter }).fromString(rawContent);
-    } else if (ext === '.xlsx' || ext === '.xls') {
-      const workbook = XLSX.readFile(filePath);
-      const sheetName = workbook.SheetNames[0];
-      jsonArray = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-    } else {
-      fs.unlinkSync(filePath);
-      return res.status(400).json({ error: 'Formato não suportado' });
-    }
-
-    // Validar e mapear cada objeto do JSON para { nome, telefone, ref }
-    const contatos = jsonArray.map(item => {
-      // Assuma que as colunas no CSV/XLSX sejam obrigatoriamente: nome, telefone, ref
-      return {
-        nome: String(item.nome).trim(),
-        telefone: String(item.telefone).replace(/\D/g, '').startsWith('55')
-          ? String(item.telefone).replace(/\D/g, '')
-          : '55' + String(item.telefone).replace(/\D/g, ''),
-        ref: item.ref ? String(item.ref).trim() : ''
-      };
-    });
-
-    // Atualiza o draft do usuário
-    let campaign = await Campaign.findOne({ userId: req.userId, status: 'draft' });
-    if (!campaign) {
-      return res.status(400).json({ error: 'Nenhum draft ativo encontrado' });
-    }
-    campaign.contatos = contatos;
-    await campaign.save();
-
-    // Apaga o arquivo temporário
-    fs.unlinkSync(filePath);
-
-    res.json({ message: 'Contatos importados', count: contatos.length });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao processar contatos' });
-  }
+router.post('/upload', upload.single('arquivo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
+  const filePath = req.file.path;
+  // Lê a primeira linha do arquivo para pegar os nomes das colunas
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) return res.status(500).json({ error: 'Erro ao ler arquivo' });
+    const header = data.split('\n')[0].replace('\r', '');
+    const columns = header.split(',');
+    fs.unlinkSync(filePath); // Remove o arquivo após ler
+    res.json({ columns });
+  });
 });
 
 // =============================================================================
@@ -186,23 +146,6 @@ router.post('/finalizar', authMiddleware, async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Erro ao finalizar campanha' });
   }
-});
-
-// =============================================================================
-// 7) POST /api/campaigns/upload
-//    → Faz upload de arquivo e retorna os nomes das colunas
-// =============================================================================
-router.post('/upload', upload.single('arquivo'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
-  const filePath = req.file.path;
-  // Lê a primeira linha do arquivo para pegar os nomes das colunas
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) return res.status(500).json({ error: 'Erro ao ler arquivo' });
-    const header = data.split('\n')[0].replace('\r', '');
-    const columns = header.split(',');
-    fs.unlinkSync(filePath); // Remove o arquivo após ler
-    res.json({ columns });
-  });
 });
 
 module.exports = router;
