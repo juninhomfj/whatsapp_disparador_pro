@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const User = require('../models/User');
+require('dotenv').config(); // 👈 Adotar da versão IA
 
 // 🔐 Login
 router.post('/login', async (req, res) => {
@@ -37,14 +38,14 @@ router.post('/register', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // 1. Verificar se usuário já existe
+        // 1. Verificar existência
         const existingUser = await User.findOne({ email });
         if (existingUser) return res.status(400).json({ error: 'Usuário já existe' });
 
-        // 2. Criptografar senha
+        // 2. Hash da senha
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // 3. Criar novo usuário
+        // 3. Criar usuário
         const newUser = new User({ email, password: hashedPassword });
         await newUser.save();
 
@@ -55,7 +56,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// Gerar token de redefinição
+// 🔑 Esqueci a Senha (Melhorado)
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -65,25 +66,25 @@ router.post('/forgot-password', async (req, res) => {
             return res.status(200).json({ message: 'Se o e-mail estiver cadastrado, você receberá um link.' });
         }
 
-        // Gerar token e validade de 1 hora
+        // Gerar token seguro
         const token = crypto.randomBytes(32).toString('hex');
         user.resetToken = token;
-        user.resetTokenExpires = Date.now() + 3600000;
+        user.resetTokenExpires = Date.now() + 3600000; // 1 hora
         await user.save();
 
+        // EM PRODUÇÃO: Implementar envio de e-mail aqui!
         const resetLink = `http://localhost:3000/reset-password.html?token=${token}`;
-        console.log("Link de redefinição:", resetLink);
+        console.log("Link de redefinição (APENAS DEV):", resetLink);
 
-        // Simulação: exibir no console (depois pode enviar e-mail)
-        return res.status(200).json({ message: 'Link de redefinição gerado.', link: resetLink });
-
+        return res.status(200).json({ message: 'Link de redefinição enviado para o e-mail' }); // 👈 Seguro
+        
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Erro ao processar' });
     }
 });
 
-// Rota para redefinir senha com token
+// 🔄 Redefinir Senha
 router.post('/reset-password', async (req, res) => {
     try {
         const { token, password } = req.body;
@@ -94,14 +95,13 @@ router.post('/reset-password', async (req, res) => {
 
         if (!user) return res.status(400).json({ error: 'Token inválido ou expirado' });
 
-        const hashed = await bcrypt.hash(password, 10);
-        user.password = hashed;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user.password = hashedPassword;
         user.resetToken = undefined;
         user.resetTokenExpires = undefined;
         await user.save();
 
         res.status(200).json({ message: 'Senha redefinida com sucesso' });
-
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Erro ao redefinir senha' });

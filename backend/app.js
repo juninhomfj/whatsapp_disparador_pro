@@ -1,44 +1,55 @@
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
-const fs = require('fs');
 const authRoutes = require('./routes/auth');
+const campaignRoutes = require('./routes/campaigns');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Conexão com MongoDB (Adicionado da IA)
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('🗄️ MongoDB conectado'))
+.catch(err => console.error('Erro MongoDB:', err));
+
+// Middlewares (Aprimorados)
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Servir frontend (Mantido do seu código)
+app.use(express.static('../frontend'));
+
+// Rotas (Combinadas)
+app.use('/api/auth', authRoutes);
+app.use('/api/campaigns', campaignRoutes);
+
+// Variáveis de estado WhatsApp (Mantidas)
 let whatsappClient = null;
 let lastQr = null;
-let connectionStatus = 'disconnected'; // disconnected | qr-pending | connected
+let connectionStatus = 'disconnected';
 
-// Limpa QR após 2 minutos
-setInterval(() => {
-  if (lastQr) lastQr = null;
-}, 120000);
+// Limpeza de QR (Mantida)
+setInterval(() => lastQr = null, 120000);
 
-// Servir arquivos estáticos do frontend
-app.use(express.static('../frontend'));
-app.use(express.json());
-app.use('/api', authRoutes);
-
-// Status da conexão para o frontend
-app.get('/status', (req, res) => {
-  res.send(connectionStatus);
-});
-
-// Rota para obter o QR Code
-app.get('/qrcode', async (req, res) => {
-  if (!lastQr) return res.send('waiting');
+// Rotas WhatsApp (Mantidas)
+app.get('/api/status', (req, res) => res.json({ status: connectionStatus }));
+app.get('/api/qrcode', async (req, res) => {
+  if (!lastQr) return res.status(202).json({ status: 'pending' });
   try {
-    const qrImage = await qrcode.toDataURL(lastQr);
-    res.send(qrImage);
+    res.json({ qr: await qrcode.toDataURL(lastQr) });
   } catch {
-    res.send('waiting');
+    res.status(202).json({ status: 'pending' });
   }
 });
 
-// Inicialização do WhatsApp Client
+// Inicialização WhatsApp (Mantida e Aprimorada)
 function initWhatsApp() {
   whatsappClient = new Client({
     authStrategy: new LocalAuth(),
@@ -47,7 +58,8 @@ function initWhatsApp() {
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage'
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
       ]
     }
   });
@@ -55,49 +67,49 @@ function initWhatsApp() {
   whatsappClient.on('qr', (qr) => {
     lastQr = qr;
     connectionStatus = 'qr-pending';
-    console.log('QR Code gerado!');
+    console.log('QR RECEBIDO');
   });
 
   whatsappClient.on('ready', () => {
-    lastQr = null;
     connectionStatus = 'connected';
-    console.log('WhatsApp conectado!');
+    console.log('WHATSAPP PRONTO');
   });
 
   whatsappClient.on('disconnected', () => {
     connectionStatus = 'disconnected';
-    console.log('WhatsApp desconectado!');
-  });
-
-  whatsappClient.on('auth_failure', (msg) => {
-    connectionStatus = 'disconnected';
-    console.error('Falha na autenticação:', msg);
+    console.log('WHATSAPP DESCONECTADO');
+    setTimeout(initWhatsApp, 5000); // Reconexão automática
   });
 
   whatsappClient.initialize();
 }
 
-// Inicializa o WhatsApp ao iniciar o servidor
-initWhatsApp();
-
-// Exemplo de endpoint para envio de mensagens
-app.post('/send', async (req, res) => {
+// Endpoint de Envio (Aprimorado)
+app.post('/api/send', async (req, res) => {
   if (connectionStatus !== 'connected') {
-    return res.status(400).json({ error: 'WhatsApp não está conectado.' });
+    return res.status(425).json({ error: 'WhatsApp não conectado' });
   }
-  const { numbers, message } = req.body;
+  
   try {
+    const { numbers, message } = req.body;
+    const results = [];
+    
     for (const number of numbers) {
-      const chatId = number.replace('+', '') + '@c.us';
+      const chatId = number.replace(/[^\d]/g, '') + '@c.us';
       await whatsappClient.sendMessage(chatId, message);
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Delay anti-ban
+      results.push({ number, status: 'success' });
+      await new Promise(resolve => setTimeout(resolve, 2500));
     }
-    res.json({ success: true });
+    
+    res.json({ success: true, results });
   } catch (error) {
-    res.status(500).json({ error: 'Erro no envio', details: error.message });
+    res.status(500).json({ 
+      error: 'Erro no envio',
+      details: error.message
+    });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
-});
+// Inicialização (Mantida)
+initWhatsApp();
+app.listen(port, () => console.log(`🚀 Servidor rodando na porta ${port}`));
