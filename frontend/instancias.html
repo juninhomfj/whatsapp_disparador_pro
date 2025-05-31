@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerenciar Instâncias</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    .instancia-card {
+      border: none;
+      border-radius: 18px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+      padding: 0;
+      margin-bottom: 24px;
+      transition: box-shadow 0.2s;
+      background: #fff;
+    }
+    .instancia-foto {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #e9ecef;
+      margin: 24px 0 24px 24px;
+    }
+    .instancia-actions button {
+      min-width: 110px;
+    }
+    .instancia-card:hover {
+      box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+    }
+    .badge-status {
+      font-size: 1em;
+      padding: 0.5em 1em;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="fw-bold">📱 Minhas Instâncias WhatsApp</h2>
+      <button class="btn btn-success" onclick="abrirCriarInstancia()">
+        <i class="bi bi-plus-circle"></i> Nova Instância
+      </button>
+    </div>
+    <div id="instancias" class="row"></div>
+    <!-- Modal para QR Code -->
+    <div class="modal fade" id="modalQrCode" tabindex="-1" aria-labelledby="modalQrCodeLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalQrCodeLabel">Escaneie o QR Code</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body text-center" id="qrCodeBox"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-container"></div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.js"></script>
+  <script>
+    let instanciaIdAtual = null;
+
+    async function carregarInstancias() {
+      const r = await fetch("/api/instancias");
+      const instancias = await r.json();
+      const div = document.getElementById("instancias");
+      div.innerHTML = "";
+      if (!instancias.length) {
+        div.innerHTML = "<div class='alert alert-warning'>Nenhuma instância cadastrada.</div>";
+        return;
+      }
+      instancias.forEach(inst => {
+        div.innerHTML += `
+          <div class="col-md-6 col-lg-4">
+            <div class="instancia-card d-flex align-items-center">
+              <img src="${inst.fotoPerfil || 'img/whatsapp.png'}" class="instancia-foto" alt="Foto">
+              <div class="flex-grow-1 ps-3">
+                <div class="d-flex align-items-center mb-2">
+                  <b class="fs-5">${inst.nome || inst.numero || 'Sem número'}</b>
+                  <span class="ms-2 badge badge-status ${inst.status === 'connected' ? 'bg-success' : 'bg-secondary'}" 
+                    data-bs-toggle="tooltip" title="${inst.status === 'connected' ? 'Instância conectada' : 'Instância desconectada'}">
+                    ${inst.status === 'connected' ? '<i class="bi bi-check-circle"></i> Conectado' : '<i class="bi bi-x-circle"></i> Desconectado'}
+                  </span>
+                </div>
+                <div class="text-muted mb-2" style="font-size:0.95em;">
+                  ${inst.numero ? `<i class="bi bi-phone"></i> ${inst.numero}` : ''}
+                </div>
+                <div class="instancia-actions d-flex gap-2">
+                  <button class="btn btn-outline-success btn-sm" onclick="conectarInstancia('${inst._id}')" data-bs-toggle="tooltip" title="Conectar e gerar QR Code">
+                    <i class="bi bi-qr-code"></i> Conectar
+                  </button>
+                  <button class="btn btn-outline-danger btn-sm" onclick="removerInstancia('${inst._id}')" data-bs-toggle="tooltip" title="Remover instância">
+                    <i class="bi bi-trash"></i> Remover
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      // Ativa tooltips do Bootstrap
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    }
+
+    async function abrirCriarInstancia() {
+      const nome = prompt("Nome da nova instância:");
+      if (!nome) return;
+      await fetch("/api/instancias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome })
+      });
+      carregarInstancias();
+    }
+
+    async function conectarInstancia(id) {
+      instanciaIdAtual = id;
+      document.getElementById('qrCodeBox').innerHTML = `<div class="spinner-border text-success"></div><div>Gerando QR Code...</div>`;
+      const r = await fetch(`/api/instancias/${id}/iniciar`, { method: "POST" });
+      const data = await r.json();
+      if (data.qrCode) {
+        document.getElementById('qrCodeBox').innerHTML = `<img src="data:image/png;base64,${data.qrCode}" alt="QR Code" style="width:100%">`;
+        const modal = new bootstrap.Modal(document.getElementById('modalQrCode'));
+        modal.show();
+      } else {
+        document.getElementById('qrCodeBox').innerText = "Erro ao gerar QR Code";
+      }
+    }
+
+    async function removerInstancia(id) {
+      if (!confirm("Deseja remover esta instância?")) return;
+      await fetch(`/api/instancias/${id}`, { method: "DELETE" });
+      carregarInstancias();
+    }
+
+    document.getElementById('modalQrCode').addEventListener('hidden.bs.modal', async () => {
+      if (instanciaIdAtual) {
+        await fetch(`/api/instancias/${instanciaIdAtual}/parar`, { method: "POST" });
+        instanciaIdAtual = null;
+      }
+      document.getElementById('qrCodeBox').innerHTML = "";
+      carregarInstancias();
+    });
+
+    fetch('sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
+    carregarInstancias();
+  </script>
+</body>
+</html>

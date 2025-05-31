@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const campaignRoutes = require('./routes/campaigns');
 const instanceRoutes = require('./routes/instances');
 const contactRoutes = require('./routes/contacts');
+const instanciasRoutes = require('./routes/instancias');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -33,6 +34,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/whatsapp/instances', instanceRoutes);
 app.use('/api/contacts', contactRoutes);
+app.use('/api/instancias', instanciasRoutes);
 
 // Variáveis de estado WhatsApp (Mantidas)
 let whatsappClient = null;

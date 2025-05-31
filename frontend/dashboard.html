@@ -6,47 +6,84 @@
     <title>Dashboard de Campanhas</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+      .dashboard-card {
+        border-radius: 18px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+        background: #fff;
+      }
+      .resumo-badge {
+        font-size: 1.1em;
+        border-radius: 12px;
+        padding: 0.4em 1em;
+        margin-left: 8px;
+      }
+      .table thead th {
+        background: #f8fafc;
+        font-weight: 600;
+      }
+      .dashboard-title {
+        color: #198754;
+        font-weight: bold;
+      }
+      .dashboard-btn {
+        border-radius: 8px;
+        font-weight: 500;
+      }
+    </style>
 </head>
 <body class="bg-light">
   <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="fw-bold">Gestão de Campanhas</h2>
-      <button class="btn btn-success" onclick="location.href='steps/step1_detalhes.html'">+ Nova Campanha</button>
+      <h2 class="dashboard-title">Gestão de Campanhas</h2>
+      <button class="btn btn-success dashboard-btn" onclick="location.href='steps/step1_detalhes.html'">
+        <i class="bi bi-plus-circle"></i> Nova Campanha
+      </button>
     </div>
 
-    <div class="row mb-4">
+    <div class="row mb-4 g-4">
       <div class="col-md-8">
-        <div class="card shadow-sm mb-4">
+        <div class="card dashboard-card mb-4">
           <div class="card-body">
-            <h5 class="card-title">Desempenho das Campanhas</h5>
+            <h5 class="card-title mb-3"><i class="bi bi-bar-chart-line"></i> Desempenho das Campanhas</h5>
             <canvas id="graficoCampanhas" height="120"></canvas>
           </div>
         </div>
       </div>
       <div class="col-md-4">
-        <div class="card shadow-sm mb-4">
+        <div class="card dashboard-card mb-4">
           <div class="card-body">
-            <h5 class="card-title">Resumo</h5>
-            <ul class="list-group list-group-flush">
-              <li class="list-group-item">Ativas: <span id="qtdAtivas">0</span></li>
-              <li class="list-group-item">Finalizadas: <span id="qtdFinalizadas">0</span></li>
-              <li class="list-group-item">Canceladas: <span id="qtdCanceladas">0</span></li>
-              <li class="list-group-item">Interrompidas: <span id="qtdInterrompidas">0</span></li>
-            </ul>
+            <h5 class="card-title mb-3"><i class="bi bi-clipboard-data"></i> Resumo</h5>
+            <div class="d-flex flex-column gap-2">
+              <span>Ativas
+                <span class="badge bg-success resumo-badge" data-bs-toggle="tooltip" title="Campanhas em andamento" id="qtdAtivas">0</span>
+              </span>
+              <span>Finalizadas
+                <span class="badge bg-secondary resumo-badge" data-bs-toggle="tooltip" title="Campanhas concluídas" id="qtdFinalizadas">0</span>
+              </span>
+              <span>Canceladas
+                <span class="badge bg-danger resumo-badge" data-bs-toggle="tooltip" title="Campanhas canceladas" id="qtdCanceladas">0</span>
+              </span>
+              <span>Interrompidas
+                <span class="badge bg-warning text-dark resumo-badge" data-bs-toggle="tooltip" title="Campanhas interrompidas" id="qtdInterrompidas">0</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card shadow-sm">
+    <div class="card dashboard-card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Últimas Campanhas</h5>
+        <h5 class="card-title mb-3"><i class="bi bi-list-task"></i> Últimas Campanhas</h5>
         <div id="listaCampanhas"></div>
       </div>
     </div>
   </div>
   <div id="sidebar-container"></div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     // Carregar campanhas do backend
@@ -82,10 +119,23 @@
       campanhas.slice(0, 10).forEach(c => {
         html += `<tr>
           <td>${c.nome}</td>
-          <td><span class="badge bg-${c.status === "active" ? "success" : c.status === "completed" ? "secondary" : c.status === "cancelled" ? "danger" : "warning"}">${c.status}</span></td>
+          <td>
+            <span class="badge bg-${c.status === "active" ? "success" : c.status === "completed" ? "secondary" : c.status === "cancelled" ? "danger" : "warning"}" 
+              data-bs-toggle="tooltip" 
+              title="${c.status === "active" ? "Em andamento" : c.status === "completed" ? "Finalizada" : c.status === "cancelled" ? "Cancelada" : "Interrompida"}">
+              ${c.status === "active" ? '<i class="bi bi-play-circle"></i> Ativa' : 
+                c.status === "completed" ? '<i class="bi bi-check-circle"></i> Finalizada' : 
+                c.status === "cancelled" ? '<i class="bi bi-x-circle"></i> Cancelada' : 
+                '<i class="bi bi-exclamation-triangle"></i> Interrompida'}
+            </span>
+          </td>
           <td>${c.enviadas || 0}</td>
           <td>${new Date(c.createdAt).toLocaleString()}</td>
-          <td><button class="btn btn-outline-primary btn-sm" onclick="location.href='report.html?id=${c._id}'">Ver Relatório</button></td>
+          <td>
+            <button class="btn btn-outline-primary btn-sm" onclick="location.href='report.html?id=${c._id}'" data-bs-toggle="tooltip" title="Ver relatório">
+              <i class="bi bi-bar-chart"></i>
+            </button>
+          </td>
         </tr>`;
       });
       html += "</tbody></table>";
@@ -109,6 +159,12 @@
           plugins: { legend: { display: false } },
           scales: { y: { beginAtZero: true } }
         }
+      });
+
+      // Ativa tooltips Bootstrap
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
       });
     }
     carregarCampanhas();
