@@ -109,37 +109,22 @@
       }
       instancias.forEach(inst => {
         div.innerHTML += `
-          <div class="col-md-6 col-lg-4">
-            <div class="instancia-card d-flex align-items-center">
-              <img src="${inst.fotoPerfil || 'img/whatsapp.png'}" class="instancia-foto" alt="Foto">
-              <div class="flex-grow-1 ps-3">
-                <div class="d-flex align-items-center mb-2">
-                  <b class="fs-5">${inst.nome || inst.numero || 'Sem número'}</b>
-                  <span class="ms-2 badge badge-status ${inst.status === 'connected' ? 'bg-success' : 'bg-secondary'}" 
-                    data-bs-toggle="tooltip" title="${inst.status === 'connected' ? 'Instância conectada' : 'Instância desconectada'}">
-                    ${inst.status === 'connected' ? '<i class="bi bi-check-circle"></i> Conectado' : '<i class="bi bi-x-circle"></i> Desconectado'}
-                  </span>
-                </div>
-                <div class="text-muted mb-2" style="font-size:0.95em;">
-                  ${inst.numero ? `<i class="bi bi-phone"></i> ${inst.numero}` : ''}
-                </div>
-                <div class="instancia-actions d-flex gap-2">
-                  <button class="btn btn-outline-success btn-sm" onclick="conectarInstancia('${inst._id}')" data-bs-toggle="tooltip" title="Conectar e gerar QR Code">
-                    <i class="bi bi-qr-code"></i> Conectar
-                  </button>
-                  <button class="btn btn-outline-danger btn-sm" onclick="removerInstancia('${inst._id}')" data-bs-toggle="tooltip" title="Remover instância">
-                    <i class="bi bi-trash"></i> Remover
-                  </button>
-                </div>
+          <div class="card mb-3" style="display:inline-block; width:320px; margin-right:16px;">
+            <div class="card-body text-center">
+              <img src="${inst.fotoPerfil || 'img/whatsapp.png'}" class="rounded-circle mb-2" style="width:64px;height:64px;">
+              <h5>${inst.nome || inst.numero || 'Sem nome'}</h5>
+              <div>
+                <span class="badge bg-${inst.status === 'connected' ? 'success' : inst.status === 'connecting' ? 'warning' : 'secondary'}">
+                  ${inst.status === 'connected' ? 'Conectado' : inst.status === 'connecting' ? 'Conectando' : 'Desconectado'}
+                </span>
+              </div>
+              <div class="mt-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="abrirModalEditarInstancia('${inst._id}')">Editar</button>
+                <button class="btn btn-outline-danger btn-sm" onclick="removerInstancia('${inst._id}')">Desativar</button>
               </div>
             </div>
           </div>
         `;
-      });
-      // Ativa tooltips do Bootstrap
-      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-      tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
       });
     }
 
@@ -174,11 +159,17 @@
       carregarInstancias();
     }
 
+    function abrirModalNovaInstancia() {
+      document.getElementById('nomeInstancia').value = '';
+      document.getElementById('velocidadeInstancia').value = 'lento';
+      new bootstrap.Modal(document.getElementById('modalNovaInstancia')).show();
+    }
+
     async function criarInstancia() {
-      const nome = document.getElementById("nomeInstancia").value;
-      const velocidade = document.getElementById("velocidadeInstancia").value;
+      const nome = document.getElementById('nomeInstancia').value.trim();
+      const velocidade = document.getElementById('velocidadeInstancia').value;
       if (!nome) {
-        alert("Por favor, insira um nome para a instância.");
+        alert("Informe o nome da instância!");
         return;
       }
       await fetch("/api/instancias", {
@@ -186,8 +177,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nome, velocidade })
       });
-      const modal = bootstrap.Modal.getInstance(document.getElementById('modalNovaInstancia'));
-      modal.hide();
+      bootstrap.Modal.getInstance(document.getElementById('modalNovaInstancia')).hide();
       carregarInstancias();
     }
 
