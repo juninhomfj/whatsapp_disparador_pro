@@ -60,6 +60,37 @@
           </div>
         </div>
       </div>
+
+      <!-- Botão para abrir modal -->
+      <button class="btn btn-success mb-4" onclick="abrirModalNovaInstancia()">
+        <i class="bi bi-plus-circle"></i> Adicionar WhatsApp
+      </button>
+
+      <!-- Modal de nova instância -->
+      <div class="modal fade" id="modalNovaInstancia" tabindex="-1" aria-labelledby="modalNovaInstanciaLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalNovaInstanciaLabel">Adicionar WhatsApp</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <label for="nomeInstancia" class="form-label">Nome</label>
+              <input type="text" id="nomeInstancia" class="form-control mb-3" placeholder="Ex: Comercial">
+              <label for="velocidadeInstancia" class="form-label">Velocidade de envio</label>
+              <select id="velocidadeInstancia" class="form-select">
+                <option value="lento">Lento (Recomendado)</option>
+                <option value="medio">Médio</option>
+                <option value="rapido">Rápido</option>
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-success" onclick="criarInstancia()">Salvar</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -140,6 +171,23 @@
     async function removerInstancia(id) {
       if (!confirm("Deseja remover esta instância?")) return;
       await fetch(`/api/instancias/${id}`, { method: "DELETE" });
+      carregarInstancias();
+    }
+
+    async function criarInstancia() {
+      const nome = document.getElementById("nomeInstancia").value;
+      const velocidade = document.getElementById("velocidadeInstancia").value;
+      if (!nome) {
+        alert("Por favor, insira um nome para a instância.");
+        return;
+      }
+      await fetch("/api/instancias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, velocidade })
+      });
+      const modal = bootstrap.Modal.getInstance(document.getElementById('modalNovaInstancia'));
+      modal.hide();
       carregarInstancias();
     }
 

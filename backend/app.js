@@ -9,6 +9,7 @@ const campaignRoutes = require('./routes/campaigns');
 const instanceRoutes = require('./routes/instances');
 const contactRoutes = require('./routes/contacts');
 const instanciasRoutes = require('./routes/instancias');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -27,7 +28,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Servir frontend (Mantido do seu código)
-app.use(express.static('../frontend'));
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Rotas (Combinadas)
 app.use('/api/auth', authRoutes);
