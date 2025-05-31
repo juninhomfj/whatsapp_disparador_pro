@@ -22,11 +22,18 @@ const upload = multer({
 // =============================================================================
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const campaigns = await Campaign.find({ userId: req.userId }).sort({ createdAt: -1 });
-    res.json(campaigns);
+    const { status, page = 1, limit = 10, busca } = req.query;
+    const filter = { userId: req.userId };
+    if (status) filter.status = status;
+    if (busca) filter.nome = { $regex: busca, $options: 'i' };
+    const total = await Campaign.countDocuments(filter);
+    const campanhas = await Campaign.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+    res.json({ campanhas, total });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao listar campanhas' });
+    res.status(500).json({ error: "Erro ao buscar campanhas" });
   }
 });
 
@@ -36,16 +43,36 @@ router.get('/', authMiddleware, async (req, res) => {
 // =============================================================================
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.isValidObjectId(id)) return res.status(400).json({ error: 'ID inválido' });
+    const campanha = await Campaign.findOne({ _id: req.params.id, userId: req.userId });
+    if (!campanha) return res.status(404).json({ error: "Campanha não encontrada" });
 
-    const campaign = await Campaign.findOne({ _id: id, userId: req.userId });
-    if (!campaign) return res.status(404).json({ error: 'Campanha não encontrada' });
+    // Exemplo: supondo que campanha.envios é um array de {nome, telefone, status, dataHora}
+    const envios = campanha.envios || [];
 
-    res.json(campaign);
+    // Agrupa por hora para o gráfico
+    const enviosPorHora = [];
+    const agrupamento = {};
+    envios.forEach(e => {
+      if (!e.dataHora) return;
+      const hora = new Date(e.dataHora).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      agrupamento[hora] = (agrupamento[hora] || 0) + 1;
+    });
+    for (const hora in agrupamento) {
+      enviosPorHora.push({ hora, qtd: agrupamento[hora] });
+    }
+    enviosPorHora.sort((a, b) => a.hora.localeCompare(b.hora));
+
+    res.json({
+      nome: campanha.nome,
+      status: campanha.status,
+      mensagem: campanha.mensagem,
+      enviadas: envios.filter(e => e.status === "enviado").length,
+      createdAt: campanha.createdAt,
+      envios,
+      enviosPorHora
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao buscar campanha' });
+    res.status(500).json({ error: "Erro ao buscar relatório" });
   }
 });
 
@@ -156,6 +183,35 @@ router.post('/finalizar', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erro ao finalizar campanha' });
+  }
+});
+
+// =============================================================================
+// 7) POST /api/campaigns/:id/cancelar
+//    → Cancela uma campanha ativa/em andamento
+// =============================================================================
+router.post('/:id/cancelar', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) return res.status(400).json({ error: 'ID inválido' });
+
+    const campanha = await Campaign.findOne({ _id: id, userId: req.userId });
+    if (!campanha) return res.status(404).json({ error: 'Campanha não encontrada' });
+
+    // Só permite cancelar se estiver ativa/em andamento
+    if (campanha.status !== 'active' && campanha.status !== 'em_andamento') {
+      return res.status(400).json({ error: 'Só é possível cancelar campanhas ativas ou em andamento' });
+    }
+
+    campanha.status = 'cancelled'; // ou 'cancelada' se preferir
+    await campanha.save();
+
+    // (Opcional) Interrompa o envio aqui, se houver processo rodando
+
+    res.json({ message: 'Campanha cancelada com sucesso' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao cancelar campanha' });
   }
 });
 

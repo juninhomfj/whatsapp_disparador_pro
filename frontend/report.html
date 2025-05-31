@@ -1,62 +1,109 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatório de Campanha</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="icon" type="image/png" href="favicon.png">
+  <meta charset="UTF-8">
+  <title>Relatório da Campanha</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Relatório: Black Friday 2024</h1>
-            <button class="export-btn" onclick="exportToCSV()">Exportar CSV</button>
-        </header>
-
-        <div class="metrics-grid">
-            <div class="metric-box">
-                <h3>🟢 Enviadas</h3>
-                <p class="metric-value">1,532</p>
-            </div>
-            
-            <div class="metric-box">
-                <h3>📨 Entregues</h3>
-                <p class="metric-value">1,489</p>
-            </div>
-            
-            <div class="metric-box">
-                <h3>👀 Lidas</h3>
-                <p class="metric-value">892</p>
-            </div>
-            
-            <div class="metric-box">
-                <h3>💬 Respondidas</h3>
-                <p class="metric-value">156</p>
-            </div>
-        </div>
-
-        <div class="performance-chart">
-            <h2>Desempenho Temporal</h2>
-            <div class="chart-placeholder">
-                <!-- Espaço para gráfico futuro -->
-                <p>Gráfico de desempenho (implementação futura)</p>
-            </div>
-        </div>
-
-        <button class="back-btn" onclick="history.back()">Voltar</button>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="mb-4">
+      <button class="btn btn-outline-secondary" onclick="history.back()">← Voltar</button>
     </div>
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h2 class="fw-bold mb-3" id="nomeCampanha">Campanha</h2>
+        <div id="resumoCampanha"></div>
+        <canvas id="graficoEnvios" height="80"></canvas>
+      </div>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Mensagens Enviadas</h5>
+        <div id="tabelaEnvios"></div>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-container"></div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    async function carregarRelatorio() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      if (!id) return;
 
-    <div id="sidebar-container"></div>
-    <script>
-      fetch('../sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
-    </script>
+      // Buscar dados da campanha
+      const r = await fetch(`/api/campaigns/${id}`);
+      const campanha = await r.json();
 
-    <script>
-        function exportToCSV() {
-            // Implementação futura
-            alert('Recurso de exportação em desenvolvimento!');
-        }
-    </script>
+      document.getElementById('nomeCampanha').innerText = campanha.nome || "Campanha";
+
+      // Resumo
+      let html = `
+        <b>Status:</b> <span class="badge bg-${campanha.status === "active" ? "success" : campanha.status === "completed" ? "secondary" : campanha.status === "cancelled" ? "danger" : "warning"}">${campanha.status}</span><br>
+        <b>Mensagens enviadas:</b> ${campanha.enviadas || 0}<br>
+        <b>Criada em:</b> ${new Date(campanha.createdAt).toLocaleString()}<br>
+        <b>Mensagem:</b> ${campanha.mensagem || ""}<br>
+      `;
+      document.getElementById('resumoCampanha').innerHTML = html;
+
+      // Gráfico de envios (exemplo: enviados por hora)
+      if (campanha.enviosPorHora) {
+        const ctx = document.getElementById('graficoEnvios').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: campanha.enviosPorHora.map(e => e.hora),
+            datasets: [{
+              label: 'Enviadas',
+              data: campanha.enviosPorHora.map(e => e.qtd),
+              borderColor: '#198754',
+              backgroundColor: 'rgba(25,135,84,0.1)',
+              tension: 0.3
+            }]
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+      }
+
+      // Tabela de envios
+      let envios = campanha.envios || [];
+      let tabela = `<table class="table table-sm table-bordered">
+        <thead>
+          <tr>
+            <th>Contato</th>
+            <th>Telefone</th>
+            <th>Status</th>
+            <th>Data/Hora</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      if (envios.length === 0) {
+        tabela += `<tr><td colspan="4" class="text-center text-muted">Nenhum envio registrado.</td></tr>`;
+      }
+      envios.forEach(e => {
+        tabela += `<tr>
+          <td>${e.nome || ""}</td>
+          <td>${e.telefone || ""}</td>
+          <td><span class="badge bg-${e.status === "enviado" ? "success" : e.status === "erro" ? "danger" : "secondary"}">${e.status}</span></td>
+          <td>${e.dataHora ? new Date(e.dataHora).toLocaleString() : ""}</td>
+        </tr>`;
+      });
+      tabela += "</tbody></table>";
+      document.getElementById("tabelaEnvios").innerHTML = tabela;
+    }
+
+    // Sidebar
+    fetch('sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
+
+    carregarRelatorio();
+  </script>
 </body>
 </html>
