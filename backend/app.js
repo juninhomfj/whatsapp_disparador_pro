@@ -9,6 +9,7 @@ const campaignRoutes = require('./routes/campaigns');
 const instanceRoutes = require('./routes/instances');
 const contactRoutes = require('./routes/contacts');
 const instanciasRoutes = require('./routes/instancias');
+const uploadRoutes = require('./routes/upload');
 const path = require('path');
 
 const app = express();
@@ -32,6 +33,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Servir frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
+app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
 
 // Rotas da API
 try {
@@ -40,6 +42,9 @@ try {
   app.use('/api/whatsapp/instances', instanceRoutes);
   app.use('/api/contacts', contactRoutes);
   app.use('/api/instancias', instanciasRoutes);
+  app.use('/api/upload', uploadRoutes);
+  // Servir uploads estaticamente:
+  app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
 } catch (err) {
   console.error('[Erro ao registrar rotas da API]:', err);
 }

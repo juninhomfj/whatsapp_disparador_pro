@@ -1,33 +1,170 @@
 <!DOCTYPE html>
-<html lang="pt-br"><head><meta charset="UTF-8"><title>Etapa 2 - Mensagem</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-<link rel="icon" type="image/x-icon" href="../favicon.ico">
-</head><body><div class="container mt-5"><div class="card p-4">
-<h2>💬 Etapa 2: Composição da Mensagem</h2>
-<form id="step2Form">
-<div class="mb-3">
-<button type="button" onclick="inserir('{nome}')" class="btn btn-sm btn-secondary">{nome}</button>
-<button type="button" onclick="inserir('{ref}')" class="btn btn-sm btn-secondary">{ref}</button>
-<textarea id="mensagem" class="form-control mt-2" rows="4" required></textarea>
-</div><div class="border bg-white p-3" id="preview">Sua mensagem aparecerá aqui</div>
-<button type="submit" class="btn btn-primary mt-3">Próximo ➡️</button>
-</form></div></div>
-<script>
-fetch("http://localhost:3000/api/campaigns/draft")
-  .then(r => r.json())
-  .then(draft => {
-    if (!draft.nome) window.location.href = "step1_detalhes.html";
-  });
-const msg=document.getElementById("mensagem"),prev=document.getElementById("preview");
-msg.addEventListener("input",()=>{prev.innerText=msg.value.replace(/{nome}/g,"João").replace(/{ref}/g,"Oferta")});
-function inserir(txt){const c=msg.selectionStart;msg.value=msg.value.slice(0,c)+txt+msg.value.slice(c);msg.dispatchEvent(new Event("input"));msg.focus();}
-document.getElementById("step2Form").addEventListener("submit",async e=>{
-  e.preventDefault();
-  await fetch("http://localhost:3000/api/campaigns/temp",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({mensagem:msg.value})
-  });
-  location.href="step3_contatos.html";
-});
-</script></body></html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Etapa 2 - Mensagem</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <style>
+    .mockup-phone {
+      background: #ece5dd url('../assets/images/backgrounds/bg_preview.png') center/cover no-repeat;
+      border-radius: 32px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.13);
+      width: 320px;
+      height: 540px;
+      margin: 0 auto;
+      padding: 24px 12px 24px 12px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      border: 8px solid #222;
+    }
+    .msg-bubble {
+      background: #dcf8c6;
+      color: #222;
+      border-radius: 18px 18px 4px 18px;
+      padding: 10px 16px;
+      margin-bottom: 12px;
+      max-width: 80%;
+      align-self: flex-end;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.07);
+      font-size: 1.1em;
+      word-break: break-word;
+      animation: fadeInMsg 0.4s;
+    }
+    .msg-bubble img {
+      max-width: 180px;
+      border-radius: 12px;
+      display: block;
+    }
+    .preview-label {
+      font-size: 0.95em;
+      color: #888;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    @keyframes fadeInMsg {
+      from { opacity: 0; transform: translateY(20px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    @media (max-width: 400px) {
+      .mockup-phone { width: 100%; height: 350px; padding: 8px; }
+    }
+    .msg-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .msg-remove {
+      color: #dc3545;
+      cursor: pointer;
+      margin-left: 8px;
+      font-size: 1.1em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <div class="card p-4">
+      <h2>💬 Etapa 2: Composição da Mensagem</h2>
+      <div class="mb-3">
+        <div class="msg-actions">
+          <button type="button" class="btn btn-success btn-sm" onclick="adicionarTexto()">+ Texto</button>
+          <label class="btn btn-info btn-sm mb-0">
+            + Imagem <input type="file" accept="image/*" style="display:none" onchange="uploadImagem(this)">
+          </label>
+          <label class="btn btn-warning btn-sm mb-0">
+            + Arquivo <input type="file" style="display:none" onchange="uploadArquivo(this)">
+          </label>
+        </div>
+      </div>
+      <div class="preview-label">Prévia da conversa no WhatsApp</div>
+      <div class="mockup-phone mb-3" id="preview"></div>
+      <form id="step2Form">
+        <button type="submit" class="btn btn-primary mt-3 w-100">Próximo ➡️</button>
+      </form>
+    </div>
+  </div>
+  <script>
+    // Mensagens da conversa
+    let mensagens = [
+      { tipo: 'texto', conteudo: 'Sua mensagem aparecerá aqui' }
+    ];
+
+    function renderPreview() {
+      const preview = document.getElementById('preview');
+      preview.innerHTML = '';
+      mensagens.forEach((msg, idx) => {
+        let html = '';
+        if (msg.tipo === 'texto') {
+          html = `<div class="msg-bubble">${msg.conteudo}
+            <span class="msg-remove" title="Remover" onclick="removerMensagem(${idx})">&times;</span>
+          </div>`;
+        } else if (msg.tipo === 'imagem') {
+          html = `<div class="msg-bubble p-1">
+            <img src="${msg.conteudo}" alt="Imagem">
+            <span class="msg-remove" title="Remover" onclick="removerMensagem(${idx})">&times;</span>
+          </div>`;
+        } else if (msg.tipo === 'arquivo') {
+          html = `<div class="msg-bubble p-1">
+            <a href="${msg.conteudo}" target="_blank">📎 Arquivo Anexado</a>
+            <span class="msg-remove" title="Remover" onclick="removerMensagem(${idx})">&times;</span>
+          </div>`;
+        }
+        preview.innerHTML += html;
+      });
+    }
+
+    function adicionarTexto() {
+      const texto = prompt("Digite o texto da mensagem:");
+      if (texto) {
+        mensagens.push({ tipo: 'texto', conteudo: texto });
+        renderPreview();
+      }
+    }
+
+    function adicionarImagem() {
+      const url = prompt("Cole a URL da imagem:");
+      if (url) {
+        mensagens.push({ tipo: 'imagem', conteudo: url });
+        renderPreview();
+      }
+    }
+
+    function adicionarArquivo() {
+      const url = prompt("Cole a URL do arquivo:");
+      if (url) {
+        mensagens.push({ tipo: 'arquivo', conteudo: url });
+        renderPreview();
+      }
+    }
+
+    function removerMensagem(idx) {
+      mensagens.splice(idx, 1);
+      if (mensagens.length === 0) {
+        mensagens.push({ tipo: 'texto', conteudo: 'Sua mensagem aparecerá aqui' });
+      }
+      renderPreview();
+    }
+
+    // Salvar e avançar
+    document.getElementById("step2Form").addEventListener("submit", async e => {
+      e.preventDefault();
+      // Aqui você pode salvar o array completo de mensagens
+      await fetch("http://localhost:3000/api/campaigns/temp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mensagens })
+      });
+      location.href = "step3_contatos.html";
+    });
+
+    // Inicializa preview
+    renderPreview();
+  </script>
+</body>
+</html>
