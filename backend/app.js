@@ -4,7 +4,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
-const authRoutes = require('./routes/auth');
+const { authMiddleware } = require('./routes/auth');
+const { router: authRoutes } = require('./routes/auth');
 const campaignRoutes = require('./routes/campaigns');
 const instanceRoutes = require('./routes/instances');
 const contactRoutes = require('./routes/contacts');
@@ -36,7 +37,8 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
 
 // Rotas da API
-app.use('/api', authRoutes); // Remova esta linhaapp.use('/api', authRoutes); // Remova esta linhaapp.use('/api/auth', authRoutes);
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/whatsapp/instances', instanceRoutes);
 app.use('/api/contacts', contactRoutes);
