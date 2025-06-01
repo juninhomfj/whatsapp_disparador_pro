@@ -27,11 +27,23 @@ function authMiddleware(req, res, next) {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log('Tentando login:', email, password);
+
         const user = await User.findOne({ email });
-        if (!user) return res.status(401).json({ error: 'Credenciais inválidas' });
+        console.log('Usuário encontrado:', user);
+
+        if (!user) {
+            console.log('Usuário não encontrado');
+            return res.status(401).json({ error: 'Credenciais inválidas' });
+        }
 
         const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) return res.status(401).json({ error: 'Credenciais inválidas' });
+        console.log('Senha válida?', validPassword);
+
+        if (!validPassword) {
+            console.log('Senha inválida');
+            return res.status(401).json({ error: 'Credenciais inválidas' });
+        }
 
         const token = jwt.sign(
             { userId: user._id },
