@@ -36,18 +36,13 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
 
 // Rotas da API
-try {
-  app.use('/api/auth', authRoutes);
-  app.use('/api/campaigns', campaignRoutes);
-  app.use('/api/whatsapp/instances', instanceRoutes);
-  app.use('/api/contacts', contactRoutes);
-  app.use('/api/instancias', instanciasRoutes);
-  app.use('/api/upload', uploadRoutes);
-  // Servir uploads estaticamente:
-  app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
-} catch (err) {
-  console.error('[Erro ao registrar rotas da API]:', err);
-}
+app.use('/api', authRoutes); // Remova esta linhaapp.use('/api', authRoutes); // Remova esta linhaapp.use('/api/auth', authRoutes);
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/whatsapp/instances', instanceRoutes);
+app.use('/api/contacts', contactRoutes);
+app.use('/api/instancias', instanciasRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
 
 // Variáveis de estado WhatsApp
 let whatsappClient = null;

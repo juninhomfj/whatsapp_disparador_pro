@@ -25,7 +25,7 @@
       display: none;
     }
     .splash-logo {
-      width: 120px;
+      width: 180px; /* Aumentado de 120px para 180px (50% maior) */
       margin-bottom: 24px;
       animation: pulse 1.5s infinite;
     }
@@ -90,10 +90,14 @@
     window.addEventListener('DOMContentLoaded', () => {
       const token = localStorage.getItem('token');
       if (token) {
-        // Opcional: você pode validar o token no backend antes de redirecionar
+        // Se estiver logado, redireciona para o dashboard
         window.location.href = 'dashboard.html';
       } else {
-        window.location.href = 'login.html';
+        // Se não estiver logado, mostra o splash normalmente após o efeito
+        setTimeout(() => {
+          document.getElementById('splash-loading').style.display = 'none';
+          document.getElementById('splash-main').style.display = 'block';
+        }, 1500); // 1.5 segundos
       }
     });
   </script>
