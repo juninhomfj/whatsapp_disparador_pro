@@ -27,7 +27,10 @@ function authMiddleware(req, res, next) {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log('Tentando login:', email, password);
+        console.log('Senha digitada:', password);
+        console.log('Hash salvo:', user.password);
+        const validPassword = await bcrypt.compare(password, user.password);
+        console.log('Senha válida?', validPassword);        console.log('Tentando login:', email, password);
 
         const user = await User.findOne({ email });
         console.log('Usuário encontrado:', user);

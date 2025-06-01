@@ -102,39 +102,7 @@
             };
 
             try {
-                router.post('/login', async (req, res) => {
-                    try {
-                        const { email, password } = req.body;
-                        console.log('Tentando login:', email, password);
-                
-                        const user = await User.findOne({ email });
-                        console.log('Usuário encontrado:', user);
-                
-                        if (!user) {
-                            console.log('Usuário não encontrado');
-                            return res.status(401).json({ error: 'Credenciais inválidas' });
-                        }
-                
-                        const validPassword = await bcrypt.compare(password, user.password);
-                        console.log('Senha válida?', validPassword);
-                
-                        if (!validPassword) {
-                            console.log('Senha inválida');
-                            return res.status(401).json({ error: 'Credenciais inválidas' });
-                        }
-                
-                        const token = jwt.sign(
-                            { userId: user._id },
-                            process.env.JWT_SECRET,
-                            { expiresIn: '24h' }
-                        );
-                
-                        res.json({ token });
-                    } catch (error) {
-                        console.error(error);
-                        res.status(500).json({ error: 'Erro interno do servidor' });
-                    }
-                });                const response = await fetch('/api/auth/login', {
+                const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
