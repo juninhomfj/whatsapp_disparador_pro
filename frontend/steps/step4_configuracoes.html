@@ -58,6 +58,15 @@
     </div>
   </div>
   <script>
+  // Proteção de rota: só permite acesso se houver token JWT
+  (function() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+  })();
+  </script>
+  <script>
     fetch("http://localhost:3000/api/campaigns/draft")
       .then(r => r.json())
       .then(draft => {

@@ -90,6 +90,15 @@
     </div>
   </div>
   <script>
+  // Proteção de rota: só permite acesso se houver token JWT
+  (function() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+  })();
+  </script>
+  <script>
     // Mensagens da conversa
     let mensagens = [
       { tipo: 'texto', conteudo: 'Sua mensagem aparecerá aqui' }

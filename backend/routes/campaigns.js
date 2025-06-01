@@ -22,7 +22,10 @@ const upload = multer({
 // =============================================================================
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { status, page = 1, limit = 10, busca } = req.query;
+    const { authMiddleware } = require('./auth');
+    router.get('/', authMiddleware, async (req, res) => {
+      // ...
+    });    module.exports = { router, authMiddleware };    const { status, page = 1, limit = 10, busca } = req.query;
     const filter = { userId: req.userId };
     if (status) filter.status = status;
     if (busca) filter.nome = { $regex: busca, $options: 'i' };
@@ -232,4 +235,4 @@ router.post('/import-csv', upload.single('arquivo'), async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = { router, authMiddleware };

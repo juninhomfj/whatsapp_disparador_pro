@@ -176,3 +176,12 @@
   </div>
 </body>
 </html>
+<script>
+  // Proteção de rota: só permite acesso se houver token JWT
+  (function() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+  })();
+</script>

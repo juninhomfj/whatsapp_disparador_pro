@@ -185,6 +185,14 @@
 
     fetch('sidebar.html').then(r=>r.text()).then(html=>{document.getElementById('sidebar-container').innerHTML=html});
     carregarInstancias();
+
+    // Proteção de rota: só permite acesso se houver token JWT
+    (function() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'login.html';
+      }
+    })();
   </script>
 </body>
 </html>

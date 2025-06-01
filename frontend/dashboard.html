@@ -34,6 +34,15 @@
     </style>
 </head>
 <body>
+  <script>
+  // Proteção de rota: só permite acesso se houver token JWT
+  (function() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+  })();
+  </script>
   <div id="sidebar-container"></div>
   <div class="main-content">
     <div class="container py-5">
@@ -90,8 +99,18 @@
   <script>
     // Carregar campanhas do backend
     async function carregarCampanhas() {
-      const r = await fetch("/api/campaigns");
+      const token = localStorage.getItem('token');
+      const r = await fetch("/api/campaigns", {
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      });
       const campanhas = await r.json();
+
+      if (!Array.isArray(campanhas)) {
+        alert(campanhas.error || 'Erro ao carregar campanhas');
+        return;
+      }
 
       // Resumo
       let ativas = 0, finalizadas = 0, canceladas = 0, interrompidas = 0;

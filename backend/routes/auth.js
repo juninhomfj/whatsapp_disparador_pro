@@ -27,10 +27,7 @@ function authMiddleware(req, res, next) {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log('Senha digitada:', password);
-        console.log('Hash salvo:', user.password);
-        const validPassword = await bcrypt.compare(password, user.password);
-        console.log('Senha válida?', validPassword);        console.log('Tentando login:', email, password);
+        console.log('Tentando login:', email, password);
 
         const user = await User.findOne({ email });
         console.log('Usuário encontrado:', user);
@@ -40,6 +37,7 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Credenciais inválidas' });
         }
 
+        console.log('Hash salvo:', user.password);
         const validPassword = await bcrypt.compare(password, user.password);
         console.log('Senha válida?', validPassword);
 
@@ -51,7 +49,7 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign(
             { userId: user._id },
             process.env.JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '48h' } // ou '7d' para 7 dias
         );
 
         res.json({ token });
@@ -70,8 +68,8 @@ router.post('/register', async (req, res) => {
         const existingUser = await User.findOne({ email });
         if (existingUser) return res.status(400).json({ error: 'Usuário já existe' });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ email, password: hashedPassword });
+        // NÃO faça hash aqui! O middleware do Mongoose já faz.
+        const newUser = new User({ email, password });
         await newUser.save();
 
         res.status(201).json({ message: 'Usuário criado com sucesso' });
@@ -142,4 +140,4 @@ router.get('/me', authMiddleware, async (req, res) => {
     }
 });
 
-module.exports = router;
+module.exports = { router, authMiddleware };
