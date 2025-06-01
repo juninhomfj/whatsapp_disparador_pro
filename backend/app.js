@@ -37,7 +37,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
 
 // Rotas da API
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/auth'); // NÃO use destructuring!
 app.use('/api/auth', authRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/whatsapp/instances', instanceRoutes);
