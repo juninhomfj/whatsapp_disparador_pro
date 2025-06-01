@@ -215,4 +215,21 @@ router.post('/:id/cancelar', authMiddleware, async (req, res) => {
   }
 });
 
+// Adicione este bloco antes de module.exports = router;
+router.post('/import-csv', upload.single('arquivo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
+  const filePath = req.file.path;
+  try {
+    const rawContent = fs.readFileSync(filePath, 'utf8');
+    const delimiter = rawContent.includes(';') ? ';' : ',';
+    const jsonArray = await csv({ delimiter }).fromString(rawContent);
+    fs.unlinkSync(filePath); // Remove o arquivo após processar
+
+    // Aqui você pode salvar os contatos, validar ou apenas retornar o array
+    res.json({ data: jsonArray });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao processar CSV' });
+  }
+});
+
 module.exports = router;
