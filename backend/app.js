@@ -31,11 +31,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Servir frontend
-try {
-  app.use(express.static(path.join(__dirname, '../frontend')));
-} catch (err) {
-  console.error('[Erro ao servir frontend]:', err);
-}
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Rotas da API
 try {
