@@ -5,6 +5,24 @@ const authMiddleware = require('../middleware/authMiddleware');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 
+// Função para criar um client WhatsApp único por instância
+function createWhatsappClient(instanceId) {
+  const client = new Client({
+    authStrategy: new LocalAuth({
+      clientId: instanceId // cria sessão única por ID
+    }),
+    puppeteer: {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage'
+      ]
+    }
+  });
+  return client;
+}
+
 // Lista todas as instâncias do usuário
 router.get('/', authMiddleware, async (req, res) => {
   const instances = await Instance.find({ userId: req.userId });
@@ -21,11 +39,8 @@ router.post('/', authMiddleware, async (req, res) => {
     });
     await instance.save();
 
-    // Cria um novo client do whatsapp-web.js
-    const client = new Client({
-      authStrategy: new LocalAuth({ clientId: instance._id.toString() }),
-      puppeteer: { headless: true, args: ['--no-sandbox'] }
-    });
+    // Cria novo client usando a função utilitária
+    const client = createWhatsappClient(instance._id.toString());
 
     client.on('qr', async (qr) => {
       // Salva o QR code temporariamente no banco (opcional)
