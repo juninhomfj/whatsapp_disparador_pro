@@ -4,6 +4,8 @@ const Instance = require('../models/Instance');
 const authMiddleware = require('../middleware/authMiddleware');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
+const path = require('path');
+const fs = require('fs');
 
 // Função para criar um client WhatsApp único por instância
 function createWhatsappClient(instanceId) {
@@ -39,8 +41,17 @@ router.post('/', authMiddleware, async (req, res) => {
     });
     await instance.save();
 
+    // Caminho da sessão
+    const clientId = instance._id.toString();
+    const sessionPath = path.join(__dirname, '..', '.wwebjs_auth', clientId);
+    if (fs.existsSync(sessionPath)) {
+      // Se a instância já existe, pode avisar ou reusar
+      return res.status(409).json({ error: 'Já existe uma sessão ativa para esta instância.' });
+      // Ou, se desejar, prosseguir para reutilizar a instância existente
+    }
+
     // Cria novo client usando a função utilitária
-    const client = createWhatsappClient(instance._id.toString());
+    const client = createWhatsappClient(clientId);
 
     client.on('qr', async (qr) => {
       // Salva o QR code temporariamente no banco (opcional)
