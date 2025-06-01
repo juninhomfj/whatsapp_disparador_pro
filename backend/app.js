@@ -119,7 +119,8 @@ function initWhatsApp() {
     });
 
     whatsappClient.on('error', (err) => {
-      console.error('[Erro no WhatsApp Client]:', err);
+      console.error('[Erro no WhatsApp Client]:', err);      const authRoutes = require('./routes/auth');
+      app.use('/api', authRoutes);
     });
 
     whatsappClient.initialize();

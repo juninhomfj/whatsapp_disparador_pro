@@ -43,7 +43,8 @@
     <div class="container mt-5">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold">📱 Minhas Instâncias WhatsApp</h2>
-        <button class="btn btn-success" onclick="abrirCriarInstancia()">
+        <!-- Botão para abrir modal (único botão de adicionar instância) -->
+        <button class="btn btn-success" onclick="abrirModalNovaInstancia()">
           <i class="bi bi-plus-circle"></i> Nova Instância
         </button>
       </div>
@@ -60,11 +61,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Botão para abrir modal -->
-      <button class="btn btn-success mb-4" onclick="abrirModalNovaInstancia()">
-        <i class="bi bi-plus-circle"></i> Adicionar WhatsApp
-      </button>
 
       <!-- Modal de nova instância -->
       <div class="modal fade" id="modalNovaInstancia" tabindex="-1" aria-labelledby="modalNovaInstanciaLabel" aria-hidden="true">
@@ -128,17 +124,6 @@
       });
     }
 
-    async function abrirCriarInstancia() {
-      const nome = prompt("Nome da nova instância:");
-      if (!nome) return;
-      await fetch("/api/instancias", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome })
-      });
-      carregarInstancias();
-    }
-
     async function conectarInstancia(id) {
       instanciaIdAtual = id;
       document.getElementById('qrCodeBox').innerHTML = `<div class="spinner-border text-success"></div><div>Gerando QR Code...</div>`;
@@ -159,12 +144,6 @@
       carregarInstancias();
     }
 
-    function abrirModalNovaInstancia() {
-      document.getElementById('nomeInstancia').value = '';
-      document.getElementById('velocidadeInstancia').value = 'lento';
-      new bootstrap.Modal(document.getElementById('modalNovaInstancia')).show();
-    }
-
     async function criarInstancia() {
       const nome = document.getElementById('nomeInstancia').value.trim();
       const velocidade = document.getElementById('velocidadeInstancia').value;
@@ -172,13 +151,27 @@
         alert("Informe o nome da instância!");
         return;
       }
-      await fetch("/api/instancias", {
+      const token = localStorage.getItem('token'); // ou sessionStorage
+      const resp = await fetch("/api/instancias", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
         body: JSON.stringify({ nome, velocidade })
       });
+      if (!resp.ok) {
+        alert("Erro ao criar instância!");
+        return;
+      }
       bootstrap.Modal.getInstance(document.getElementById('modalNovaInstancia')).hide();
       carregarInstancias();
+    }
+
+    function abrirModalNovaInstancia() {
+      document.getElementById('nomeInstancia').value = '';
+      document.getElementById('velocidadeInstancia').value = 'lento';
+      new bootstrap.Modal(document.getElementById('modalNovaInstancia')).show();
     }
 
     document.getElementById('modalQrCode').addEventListener('hidden.bs.modal', async () => {

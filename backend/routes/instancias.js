@@ -12,8 +12,8 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // Cria nova instância
 router.post('/', authMiddleware, async (req, res) => {
-  const { nome } = req.body;
-  const instancia = await Instancia.create({ nome, userId: req.userId, status: 'desconectado' });
+  const { nome, velocidade } = req.body;
+  const instancia = await Instancia.create({ nome, velocidade, userId: req.userId, status: 'desconectado' });
   res.json(instancia);
 });
 
