@@ -29,20 +29,15 @@ router.post('/login', async (req, res) => {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
 
-        if (!user) {
-            return res.status(401).json({ error: 'Usuário não encontrado' });
-        }
+        if (!user) return res.status(401).json({ error: 'Usuário não encontrado' });
 
         const validPassword = await bcrypt.compare(password, user.password);
-
-        if (!validPassword) {
-            return res.status(401).json({ error: 'Senha inválida' });
-        }
+        if (!validPassword) return res.status(401).json({ error: 'Senha inválida' });
 
         const token = jwt.sign(
             { userId: user._id },
             process.env.JWT_SECRET,
-            { expiresIn: '72h' } // expira em 72 horas
+            { expiresIn: '72h' }
         );
 
         res.json({ token });
@@ -60,7 +55,6 @@ router.post('/register', async (req, res) => {
         const existingUser = await User.findOne({ email });
         if (existingUser) return res.status(400).json({ error: 'Usuário já existe' });
 
-        // NÃO faça hash aqui! O middleware do Mongoose já faz.
         const newUser = new User({ email, password });
         await newUser.save();
 
@@ -83,10 +77,9 @@ router.post('/forgot-password', async (req, res) => {
 
         const token = crypto.randomBytes(32).toString('hex');
         user.resetToken = token;
-        user.resetTokenExpires = Date.now() + 3600000; // 1 hora
+        user.resetTokenExpires = Date.now() + 3600000;
         await user.save();
 
-        // Em produção: enviar e-mail!
         const resetLink = `http://localhost:3000/reset-password.html?token=${token}`;
         console.log("Link de redefinição (DEV):", resetLink);
 
@@ -121,7 +114,7 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
-// 🔎 Rota para obter dados do usuário autenticado
+// 🔎 Dados do usuário autenticado
 router.get('/me', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.userId).select('-password -resetToken -resetTokenExpires');
@@ -132,5 +125,4 @@ router.get('/me', authMiddleware, async (req, res) => {
     }
 });
 
-module.exports = router;
-module.exports.authMiddleware = authMiddleware;
+module.exports = router; // ✅ Exportando apenas o router corretamente
