@@ -1,4 +1,4 @@
-require('dotenv').config();
+xrequire('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -11,7 +11,7 @@ const port = process.env.PORT || 3000;
 
 // Rotas da aplicação
 const authRoutes = require('./routes/auth');
-const campaignRoutes = require('./routes/campaigns');
+const campaignsRoutes = require('./routes/campaigns');
 const instanceRoutes = require('./routes/instances');
 const contactRoutes = require('./routes/contacts');
 const instanciasRoutes = require('./routes/instancias');
