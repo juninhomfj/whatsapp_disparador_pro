@@ -1,10 +1,10 @@
 const express = require('express');
-const router  = express.Router();
-const multer  = require('multer');
-const csv     = require('csvtojson');
-const XLSX    = require('xlsx');
-const fs      = require('fs');
-const path    = require('path');
+const router = express.Router();
+const multer = require('multer');
+const csv = require('csvtojson');
+const XLSX = require('xlsx');
+const fs = require('fs');
+const path = require('path');
 const Campaign = require('../models/Campaign');
 const Contact = require('../models/Contact');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -22,10 +22,7 @@ const upload = multer({
 // =============================================================================
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { authMiddleware } = require('./auth');
-    router.get('/', authMiddleware, async (req, res) => {
-      // ...
-    });    module.exports = { router, authMiddleware };    const { status, page = 1, limit = 10, busca } = req.query;
+    const { status, page = 1, limit = 10, busca } = req.query;
     const filter = { userId: req.userId };
     if (status) filter.status = status;
     if (busca) filter.nome = { $regex: busca, $options: 'i' };
@@ -49,10 +46,8 @@ router.get('/:id', authMiddleware, async (req, res) => {
     const campanha = await Campaign.findOne({ _id: req.params.id, userId: req.userId });
     if (!campanha) return res.status(404).json({ error: "Campanha não encontrada" });
 
-    // Exemplo: supondo que campanha.envios é um array de {nome, telefone, status, dataHora}
     const envios = campanha.envios || [];
 
-    // Agrupa por hora para o gráfico
     const enviosPorHora = [];
     const agrupamento = {};
     envios.forEach(e => {
@@ -102,7 +97,6 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 // =============================================================================
 router.post('/temp', authMiddleware, async (req, res) => {
   try {
-    // Os campos podem vir em qualquer etapa:
     const updateFields = {};
     if (req.body.nome)         updateFields.nome = req.body.nome;
     if (req.body.descricao)    updateFields.descricao = req.body.descricao;
@@ -113,7 +107,6 @@ router.post('/temp', authMiddleware, async (req, res) => {
     if (req.body.ordem)        updateFields.ordem = req.body.ordem;
 
     if (req.body.contatos && Array.isArray(req.body.contatos)) {
-      // Busque os contatos completos pelo ID
       const contatos = await Contact.find({ _id: { $in: req.body.contatos }, userId: req.userId });
       updateFields.contatos = contatos.map(c => ({
         nome: c.nome,
@@ -122,17 +115,14 @@ router.post('/temp', authMiddleware, async (req, res) => {
       }));
     }
 
-    // Tenta encontrar um draft (status: 'draft') deste usuário
     let campaign = await Campaign.findOne({ userId: req.userId, status: 'draft' });
     if (!campaign) {
-      // Se não existir draft, cria um novo
       campaign = new Campaign({
         userId: req.userId,
         ...updateFields,
         status: 'draft'
       });
     } else {
-      // Se existir, atualiza somente os campos que vieram
       Object.assign(campaign, updateFields);
     }
     await campaign.save();
@@ -150,36 +140,32 @@ router.post('/temp', authMiddleware, async (req, res) => {
 router.post('/upload', upload.single('arquivo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
   const filePath = req.file.path;
-  // Lê a primeira linha do arquivo para pegar os nomes das colunas
   fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) return res.status(500).json({ error: 'Erro ao ler arquivo' });
     const header = data.split('\n')[0].replace('\r', '');
     const columns = header.split(',');
-    fs.unlinkSync(filePath); // Remove o arquivo após ler
+    fs.unlinkSync(filePath);
     res.json({ columns });
   });
 });
 
 // =============================================================================
 // 6) POST /api/campaigns/finalizar
-//    → Marca campaign como agendada ou em andamento e dispara scheduler
+//    → Marca campanha como agendada ou em andamento
 // =============================================================================
 router.post('/finalizar', authMiddleware, async (req, res) => {
   try {
     const campaign = await Campaign.findOne({ userId: req.userId, status: 'draft' });
     if (!campaign) return res.status(400).json({ error: 'Nenhum draft para finalizar' });
 
-    // Define o status conforme tipoEnvio
     if (campaign.tipoEnvio === 'imediato') {
       campaign.status = 'em_andamento';
       await campaign.save();
-      // Aqui você pode chamar uma função de scheduler para envio imediato
-      // ex: sendNow(campaign);
+      // sendNow(campaign);
     } else {
       campaign.status = 'agendado';
       await campaign.save();
-      // Aqui programe com APScheduler ou setTimeout para a dataAgendada
-      // ex: scheduleSend(campaign);
+      // scheduleSend(campaign);
     }
 
     res.json({ message: 'Campanha finalizada com sucesso', campaignId: campaign._id });
@@ -201,15 +187,12 @@ router.post('/:id/cancelar', authMiddleware, async (req, res) => {
     const campanha = await Campaign.findOne({ _id: id, userId: req.userId });
     if (!campanha) return res.status(404).json({ error: 'Campanha não encontrada' });
 
-    // Só permite cancelar se estiver ativa/em andamento
     if (campanha.status !== 'active' && campanha.status !== 'em_andamento') {
       return res.status(400).json({ error: 'Só é possível cancelar campanhas ativas ou em andamento' });
     }
 
-    campanha.status = 'cancelled'; // ou 'cancelada' se preferir
+    campanha.status = 'cancelled';
     await campanha.save();
-
-    // (Opcional) Interrompa o envio aqui, se houver processo rodando
 
     res.json({ message: 'Campanha cancelada com sucesso' });
   } catch (err) {
@@ -218,7 +201,10 @@ router.post('/:id/cancelar', authMiddleware, async (req, res) => {
   }
 });
 
-// Adicione este bloco antes de module.exports = router;
+// =============================================================================
+// 8) POST /api/campaigns/import-csv
+//    → Lê e converte um CSV inteiro para JSON
+// =============================================================================
 router.post('/import-csv', upload.single('arquivo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
   const filePath = req.file.path;
@@ -226,13 +212,12 @@ router.post('/import-csv', upload.single('arquivo'), async (req, res) => {
     const rawContent = fs.readFileSync(filePath, 'utf8');
     const delimiter = rawContent.includes(';') ? ';' : ',';
     const jsonArray = await csv({ delimiter }).fromString(rawContent);
-    fs.unlinkSync(filePath); // Remove o arquivo após processar
-
-    // Aqui você pode salvar os contatos, validar ou apenas retornar o array
+    fs.unlinkSync(filePath);
     res.json({ data: jsonArray });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao processar CSV' });
   }
 });
 
-module.exports = { router, authMiddleware };
+// ✅ Exportação correta
+module.exports = router;
